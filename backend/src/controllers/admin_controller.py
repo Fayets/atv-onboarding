@@ -53,6 +53,44 @@ def update_discord_channel(
         )
 
 
+@router.get(
+    "/sessions/by-invite-code/{invite_code}",
+    response_model=schemas.SessionByInviteCodeResponse,
+)
+def get_session_by_invite_code(
+    invite_code: str,
+    _: str = Depends(verify_admin_key),
+):
+    try:
+        return service.get_session_by_invite_code(invite_code)
+    except HTTPException as e:
+        raise e
+    except Exception:
+        raise HTTPException(
+            status_code=500,
+            detail="Error inesperado al buscar la sesión por invite.",
+        )
+
+
+@router.patch(
+    "/sessions/{session_id}/role-assigned",
+    response_model=schemas.RoleAssignedResponse,
+)
+def mark_role_assigned(
+    session_id: UUID,
+    _: str = Depends(verify_admin_key),
+):
+    try:
+        return service.mark_role_assigned(session_id)
+    except HTTPException as e:
+        raise e
+    except Exception:
+        raise HTTPException(
+            status_code=500,
+            detail="Error inesperado al marcar el rol como asignado.",
+        )
+
+
 @router.get("/dashboard", response_model=schemas.DashboardResponse)
 def get_dashboard():
     try:

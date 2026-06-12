@@ -28,6 +28,10 @@ MIGRATIONS = [
     ALTER TABLE onboarding.sessions
     ADD COLUMN IF NOT EXISTS call_completed_at TIMESTAMP;
     """,
+    """
+    ALTER TABLE onboarding.sessions
+    ADD COLUMN IF NOT EXISTS role_assigned BOOLEAN DEFAULT FALSE;
+    """,
 ]
 
 

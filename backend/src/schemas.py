@@ -92,6 +92,18 @@ class UpdateDiscordChannelResponse(BaseModel):
     discord_invite_url: str | None = None
 
 
+class SessionByInviteCodeResponse(BaseModel):
+    session_id: str
+    plan: str | None = None
+    role_assigned: bool
+
+
+class RoleAssignedResponse(BaseModel):
+    ok: bool = True
+    session_id: str
+    role_assigned: bool = True
+
+
 EstadoOnboarding = Literal[
     "enviado",
     "formulario_completo",

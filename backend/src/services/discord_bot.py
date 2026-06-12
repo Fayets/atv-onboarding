@@ -17,6 +17,14 @@ PLAN_CATEGORY_PATTERNS = {
     "Advantage": "canales atv advantage",
 }
 
+PLAN_ROLE_NAMES = {
+    "Boost": "Boost",
+    "Mentoría": "Principiantes",
+    "Advantage": "Advantage",
+}
+
+invite_uses_snapshot: dict[str, int] = {}
+
 
 def _config(name: str, default: str = "") -> str:
     return config(name, default=default).strip()
@@ -94,6 +102,67 @@ def _build_success_embed(
     return embed
 
 
+async def _assign_role_for_invite(member: discord.Member, invite_code: str) -> None:
+    api_base = _config("API_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
+    admin_key = _config("ADMIN_API_KEY")
+    if not admin_key:
+        logger.warning("ADMIN_API_KEY no configurada; no se asigna rol.")
+        return
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.get(
+                f"{api_base}/api/admin/sessions/by-invite-code/{invite_code}",
+                headers={"X-Admin-Key": admin_key},
+            )
+            if resp.status_code == 404:
+                return
+            if resp.status_code != 200:
+                logger.error(
+                    "Error al buscar sesión por invite %s: %s",
+                    invite_code,
+                    resp.text,
+                )
+                return
+
+            data = resp.json()
+            if data.get("role_assigned"):
+                return
+
+            plan = data.get("plan")
+            role_name = PLAN_ROLE_NAMES.get(plan)
+            if not role_name:
+                logger.warning("Plan sin rol mapeado: %s", plan)
+                return
+
+            role = discord.utils.get(member.guild.roles, name=role_name)
+            if not role:
+                logger.warning("Rol no encontrado en el servidor: %s", role_name)
+                return
+
+            await member.add_roles(role, reason=f"Onboarding ATV ({plan})")
+
+            patch_resp = await client.patch(
+                f"{api_base}/api/admin/sessions/{data['session_id']}/role-assigned",
+                headers={"X-Admin-Key": admin_key},
+            )
+            if patch_resp.status_code != 200:
+                logger.error(
+                    "Error al marcar role_assigned para sesión %s: %s",
+                    data.get("session_id"),
+                    patch_resp.text,
+                )
+            else:
+                logger.info(
+                    "Rol %s asignado a %s (invite %s)",
+                    role_name,
+                    member.display_name,
+                    invite_code,
+                )
+    except Exception:
+        logger.exception("Error en _assign_role_for_invite")
+
+
 class ATVDiscordBot(discord.Client):
     def __init__(self, guild_id: int):
         intents = discord.Intents.default()
@@ -114,6 +183,27 @@ class ATVDiscordBot(discord.Client):
 
 def _build_bot(guild_id: int) -> ATVDiscordBot:
     bot = ATVDiscordBot(guild_id=guild_id)
+
+    @bot.event
+    async def on_member_join(member: discord.Member) -> None:
+        if member.guild.id != guild_id:
+            return
+
+        try:
+            invites = await member.guild.invites()
+            for invite in invites:
+                prev = invite_uses_snapshot.get(invite.code)
+                if prev is not None and invite.uses is not None and invite.uses > prev:
+                    invite_uses_snapshot[invite.code] = invite.uses
+                    await _assign_role_for_invite(member, invite.code)
+                    break
+        except discord.Forbidden:
+            logger.warning(
+                "Sin permiso para listar invites en el servidor %s",
+                member.guild.name,
+            )
+        except Exception:
+            logger.exception("Error en on_member_join")
 
     @bot.tree.command(
         name="add-client",
@@ -208,6 +298,7 @@ def _build_bot(guild_id: int) -> ATVDiscordBot:
                     unique=True,
                     reason=f"Invite onboarding {name}",
                 )
+                invite_uses_snapshot[invite.code] = 0
 
                 patch_resp = await client.patch(
                     f"{api_base}/api/admin/sessions/{session_id}/discord-channel",

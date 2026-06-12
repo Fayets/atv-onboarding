@@ -25,6 +25,7 @@ class OnboardingSession(db.Entity):
     discord_channel_id = Optional(str)
     discord_invite_url = Optional(str)
     discord_invite_used = Required(bool, default=False)
+    role_assigned = Required(bool, default=False)
     forms = Set("OnboardingForm")
 
 

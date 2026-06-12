@@ -176,6 +176,38 @@ class AdminServices:
             discord_invite_url=payload.discord_invite_url,
         )
 
+    def get_session_by_invite_code(
+        self, invite_code: str
+    ) -> schemas.SessionByInviteCodeResponse:
+        with db_session:
+            session = None
+            for candidate in OnboardingSession.select():
+                if (
+                    candidate.discord_invite_url
+                    and invite_code in candidate.discord_invite_url
+                ):
+                    session = candidate
+                    break
+
+            if not session:
+                raise HTTPException(status_code=404, detail="Sesión no encontrada.")
+
+            return schemas.SessionByInviteCodeResponse(
+                session_id=str(session.id),
+                plan=session.plan,
+                role_assigned=session.role_assigned,
+            )
+
+    def mark_role_assigned(self, session_id: UUID) -> schemas.RoleAssignedResponse:
+        with db_session:
+            session = OnboardingSession.get(id=session_id)
+            if not session:
+                raise HTTPException(status_code=404, detail="Sesión no encontrada.")
+
+            session.role_assigned = True
+
+        return schemas.RoleAssignedResponse(session_id=str(session_id))
+
     def get_dashboard(self) -> schemas.DashboardResponse:
         with db_session:
             sessions = list(OnboardingSession.select().order_by(OnboardingSession.created_at.desc()))
