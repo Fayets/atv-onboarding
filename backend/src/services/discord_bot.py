@@ -208,7 +208,37 @@ async def _assign_role_for_invite(member: discord.Member, invite_code: str) -> N
                 logger.warning("Rol no encontrado en el servidor: %s", role_name)
                 return
 
+            bot_member = member.guild.me
+            if bot_member:
+                logger.info(
+                    "Intentando asignar rol '%s' (id=%s) a %s. Roles del bot: %s, "
+                    "posición del rol del bot vs target: bot_top_role=%s (pos %s), "
+                    "target_role=%s (pos %s)",
+                    role.name,
+                    role.id,
+                    member.display_name,
+                    [r.name for r in bot_member.roles],
+                    bot_member.top_role.name,
+                    bot_member.top_role.position,
+                    role.name,
+                    role.position,
+                )
+            else:
+                logger.warning(
+                    "member.guild.me es None al intentar asignar rol '%s' a %s",
+                    role.name,
+                    member.display_name,
+                )
+
             await member.add_roles(role, reason=f"Onboarding ATV ({plan})")
+
+            fresh_member = await member.guild.fetch_member(member.id)
+            role_names_after = [r.name for r in fresh_member.roles]
+            logger.info(
+                "Roles de %s después de add_roles: %s",
+                member.display_name,
+                role_names_after,
+            )
 
             patch_resp = await client.patch(
                 f"{api_base}/api/admin/sessions/{data['session_id']}/role-assigned",
