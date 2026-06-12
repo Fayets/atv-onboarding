@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import sys
 import threading
 from datetime import datetime
 from typing import Any
@@ -9,6 +10,28 @@ import httpx
 from decouple import config
 from discord import app_commands
 
+LOG_FORMAT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+
+
+def _configure_discord_bot_logging() -> None:
+    root = logging.getLogger()
+    if not root.handlers:
+        logging.basicConfig(
+            level=logging.INFO,
+            format=LOG_FORMAT,
+            stream=sys.stdout,
+        )
+
+    bot_logger = logging.getLogger(__name__)
+    if not any(isinstance(h, logging.StreamHandler) for h in bot_logger.handlers):
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(logging.INFO)
+        handler.setFormatter(logging.Formatter(LOG_FORMAT))
+        bot_logger.addHandler(handler)
+    bot_logger.setLevel(logging.INFO)
+
+
+_configure_discord_bot_logging()
 logger = logging.getLogger(__name__)
 
 PLAN_CATEGORY_PATTERNS = {
@@ -183,11 +206,26 @@ class ATVDiscordBot(discord.Client):
         await self.tree.sync(guild=guild)
 
     async def on_ready(self) -> None:
-        logger.info("Discord bot conectado como %s", self.user)
+        guild_ids = [g.id for g in self.guilds]
+        logger.info(
+            "Bot conectado como %s, guilds: %s (target guild: %s)",
+            self.user,
+            guild_ids,
+            self.guild_id,
+        )
 
     async def on_member_join(self, member: discord.Member) -> None:
-        print("on_member_join disparado para:", member.name)
+        logger.info(
+            "on_member_join disparado para: %s (guild %s)",
+            member.name,
+            member.guild.id,
+        )
         if member.guild.id != self.guild_id:
+            logger.info(
+                "on_member_join ignorado: guild %s != target guild %s",
+                member.guild.id,
+                self.guild_id,
+            )
             return
 
         try:
