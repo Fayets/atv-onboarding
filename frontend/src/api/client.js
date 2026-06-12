@@ -5,6 +5,13 @@ const defaultOptions = {
   },
 };
 
+export class ApiError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.status = status;
+  }
+}
+
 async function parseResponse(res) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -15,7 +22,7 @@ async function parseResponse(res) {
         : Array.isArray(detail)
           ? detail[0]?.msg
           : data.error || 'Error inesperado';
-    throw new Error(message);
+    throw new ApiError(message, res.status);
   }
   return data;
 }

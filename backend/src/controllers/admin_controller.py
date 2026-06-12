@@ -4,6 +4,7 @@ from decouple import config
 from fastapi import APIRouter, Depends, Header, HTTPException
 
 from src import schemas
+from src.deps import verify_ecosystem_session
 from src.services.admin_services import AdminServices
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -108,7 +109,7 @@ def mark_role_assigned(
 
 
 @router.get("/dashboard", response_model=schemas.DashboardResponse)
-def get_dashboard():
+def get_dashboard(_: str = Depends(verify_ecosystem_session)):
     try:
         return service.get_dashboard()
     except HTTPException as e:
@@ -121,7 +122,7 @@ def get_dashboard():
 
 
 @router.get("/sessions/{session_id}/form", response_model=schemas.SessionFormResponse)
-def get_session_form(session_id: UUID):
+def get_session_form(session_id: UUID, _: str = Depends(verify_ecosystem_session)):
     try:
         return service.get_session_form(session_id)
     except HTTPException as e:
@@ -137,7 +138,7 @@ def get_session_form(session_id: UUID):
     "/sessions/{session_id}/call-scheduled",
     response_model=schemas.CallStatusResponse,
 )
-def mark_call_scheduled(session_id: UUID):
+def mark_call_scheduled(session_id: UUID, _: str = Depends(verify_ecosystem_session)):
     try:
         return service.mark_call_scheduled(session_id)
     except HTTPException as e:
@@ -153,7 +154,7 @@ def mark_call_scheduled(session_id: UUID):
     "/sessions/{session_id}/call-completed",
     response_model=schemas.CallStatusResponse,
 )
-def mark_call_completed(session_id: UUID):
+def mark_call_completed(session_id: UUID, _: str = Depends(verify_ecosystem_session)):
     try:
         return service.mark_call_completed(session_id)
     except HTTPException as e:
@@ -169,7 +170,11 @@ def mark_call_completed(session_id: UUID):
     "/sessions/{session_id}/estado",
     response_model=schemas.UpdateEstadoResponse,
 )
-def update_estado(session_id: UUID, payload: schemas.UpdateEstadoRequest):
+def update_estado(
+    session_id: UUID,
+    payload: schemas.UpdateEstadoRequest,
+    _: str = Depends(verify_ecosystem_session),
+):
     try:
         return service.update_estado(session_id, payload)
     except HTTPException as e:

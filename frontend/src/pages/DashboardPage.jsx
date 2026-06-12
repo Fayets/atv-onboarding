@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Layout, { LOGO_URL } from '../components/Layout';
 import FormResponsesModal from '../components/FormResponsesModal';
 import {
+  ApiError,
   getDashboard,
   getSessionForm,
   markCallCompleted,
@@ -110,7 +111,11 @@ export default function DashboardPage() {
       const data = await getDashboard();
       setSessions(data.sessions || []);
     } catch (err) {
-      setError(err.message || 'No se pudo cargar el dashboard.');
+      if (err instanceof ApiError && err.status === 401) {
+        setError('Acceso no autorizado. Ingresá desde ATV Ecosystem.');
+      } else {
+        setError(err.message || 'No se pudo cargar el dashboard.');
+      }
     } finally {
       setLoading(false);
     }
