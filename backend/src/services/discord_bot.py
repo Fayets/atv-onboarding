@@ -171,6 +171,11 @@ class ATVDiscordBot(discord.Client):
         super().__init__(intents=intents)
         self.guild_id = guild_id
         self.tree = app_commands.CommandTree(self)
+        logger.info(
+            "Discord bot intents: members=%s guilds=%s",
+            intents.members,
+            intents.guilds,
+        )
 
     async def setup_hook(self) -> None:
         guild = discord.Object(id=self.guild_id)
@@ -180,13 +185,9 @@ class ATVDiscordBot(discord.Client):
     async def on_ready(self) -> None:
         logger.info("Discord bot conectado como %s", self.user)
 
-
-def _build_bot(guild_id: int) -> ATVDiscordBot:
-    bot = ATVDiscordBot(guild_id=guild_id)
-
-    @bot.event
-    async def on_member_join(member: discord.Member) -> None:
-        if member.guild.id != guild_id:
+    async def on_member_join(self, member: discord.Member) -> None:
+        print("on_member_join disparado para:", member.name)
+        if member.guild.id != self.guild_id:
             return
 
         try:
@@ -204,6 +205,10 @@ def _build_bot(guild_id: int) -> ATVDiscordBot:
             )
         except Exception:
             logger.exception("Error en on_member_join")
+
+
+def _build_bot(guild_id: int) -> ATVDiscordBot:
+    bot = ATVDiscordBot(guild_id=guild_id)
 
     @bot.tree.command(
         name="add-client",
