@@ -215,7 +215,11 @@ class AdminServices:
             pending = [
                 session
                 for session in OnboardingSession.select()
-                if not session.role_assigned and session.discord_channel_id
+                if (
+                    not session.role_assigned
+                    and session.discord_channel_id
+                    and session.discord_invite_url
+                )
             ]
             pending.sort(
                 key=lambda session: session.created_at

@@ -296,6 +296,13 @@ class ATVDiscordBot(discord.Client):
             for session in pending_sessions:
                 channel_id = int(session["discord_channel_id"])
                 expected_code = _invite_code_from_url(session.get("discord_invite_url"))
+                if not expected_code:
+                    logger.warning(
+                        "on_member_join: sesión %s sin invite code en discord_invite_url",
+                        session.get("session_id"),
+                    )
+                    continue
+
                 channel = await _fetch_guild_channel(member.guild, channel_id)
                 if channel is None:
                     logger.warning(
@@ -313,33 +320,27 @@ class ATVDiscordBot(discord.Client):
                     continue
 
                 channel_invites = await channel.invites()
-                channel_summary = [
-                    {"code": invite.code, "uses": invite.uses}
-                    for invite in channel_invites
-                ]
+                active_codes = {invite.code for invite in channel_invites}
                 logger.info(
-                    "on_member_join: channel.invites() canal %s session %s expected=%s invites=%s",
+                    "on_member_join: channel.invites() canal %s session %s expected=%s active_codes=%s",
                     channel_id,
                     session.get("session_id"),
                     expected_code,
-                    channel_summary,
+                    sorted(active_codes),
                 )
 
-                for invite in channel_invites:
-                    if expected_code and invite.code != expected_code:
-                        continue
-                    if invite.uses is not None and invite.uses >= 1:
-                        logger.info(
-                            "on_member_join: invite usado en canal %s (%s uses=%s), asignando rol",
-                            channel_id,
-                            invite.code,
-                            invite.uses,
-                        )
-                        await _assign_role_for_invite(member, invite.code)
-                        return
+                if expected_code not in active_codes:
+                    logger.info(
+                        "on_member_join: invite %s ausente en canal %s (consumido), asignando rol session %s",
+                        expected_code,
+                        channel_id,
+                        session.get("session_id"),
+                    )
+                    await _assign_role_for_invite(member, expected_code)
+                    return
 
             logger.info(
-                "on_member_join: ningún invite con uses>=1 en canales pendientes para %s",
+                "on_member_join: ningún invite consumido detectado en sesiones pendientes para %s",
                 member.name,
             )
         except Exception:
