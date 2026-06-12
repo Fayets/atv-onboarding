@@ -220,27 +220,47 @@ class ATVDiscordBot(discord.Client):
             member.name,
             member.guild.id,
         )
-        if member.guild.id != self.guild_id:
-            logger.info(
-                "on_member_join ignorado: guild %s != target guild %s",
-                member.guild.id,
-                self.guild_id,
-            )
-            return
 
         try:
+            if member.guild.id != self.guild_id:
+                logger.info(
+                    "on_member_join ignorado: guild %s != target guild %s",
+                    member.guild.id,
+                    self.guild_id,
+                )
+                return
+
+            logger.info(
+                "on_member_join: obteniendo invites del guild %s...",
+                member.guild.id,
+            )
             invites = await member.guild.invites()
+            logger.info(
+                "on_member_join: guild.invites() devolvió %s invite(s)",
+                len(invites),
+            )
+
             for invite in invites:
                 prev = invite_uses_snapshot.get(invite.code)
+                logger.info(
+                    "on_member_join: invite code=%s uses=%s snapshot=%s",
+                    invite.code,
+                    invite.uses,
+                    prev,
+                )
                 if prev is not None and invite.uses is not None and invite.uses > prev:
                     invite_uses_snapshot[invite.code] = invite.uses
+                    logger.info(
+                        "on_member_join: invite usado detectado, asignando rol (%s)",
+                        invite.code,
+                    )
                     await _assign_role_for_invite(member, invite.code)
                     break
-        except discord.Forbidden:
-            logger.warning(
-                "Sin permiso para listar invites en el servidor %s",
-                member.guild.name,
-            )
+            else:
+                logger.info(
+                    "on_member_join: ningún invite trackeado coincidió para %s",
+                    member.name,
+                )
         except Exception:
             logger.exception("Error en on_member_join")
 
