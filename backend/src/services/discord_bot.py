@@ -125,6 +125,51 @@ def _build_success_embed(
     return embed
 
 
+def _invite_code_from_url(url: str | None) -> str | None:
+    if not url:
+        return None
+    code = url.rstrip("/").split("/")[-1]
+    return code or None
+
+
+async def _fetch_pending_role_sessions() -> list[dict]:
+    api_base = _config("API_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
+    admin_key = _config("ADMIN_API_KEY")
+    if not admin_key:
+        logger.warning("ADMIN_API_KEY no configurada; no se consultan sesiones pendientes.")
+        return []
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.get(
+                f"{api_base}/api/admin/sessions/pending-role-assignment",
+                headers={"X-Admin-Key": admin_key},
+            )
+            if resp.status_code != 200:
+                logger.error(
+                    "Error al obtener sesiones pendientes de rol: %s",
+                    resp.text,
+                )
+                return []
+            return resp.json().get("sessions", [])
+    except Exception:
+        logger.exception("Error al consultar sesiones pendientes de rol")
+        return []
+
+
+async def _fetch_guild_channel(
+    guild: discord.Guild,
+    channel_id: int,
+) -> discord.abc.GuildChannel | None:
+    channel = guild.get_channel(channel_id)
+    if channel is not None:
+        return channel
+    try:
+        return await guild.fetch_channel(channel_id)
+    except discord.NotFound:
+        return None
+
+
 async def _assign_role_for_invite(member: discord.Member, invite_code: str) -> None:
     api_base = _config("API_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
     admin_key = _config("ADMIN_API_KEY")
@@ -193,7 +238,6 @@ class ATVDiscordBot(discord.Client):
         intents.members = True
         super().__init__(intents=intents)
         self.guild_id = guild_id
-        self.invite_uses_snapshot: dict[str, int] = {}
         self.tree = app_commands.CommandTree(self)
         logger.info(
             "Discord bot intents: members=%s guilds=%s",
@@ -235,38 +279,69 @@ class ATVDiscordBot(discord.Client):
                 )
                 return
 
+            guild_invites = await member.guild.invites()
+            guild_codes = [invite.code for invite in guild_invites]
             logger.info(
-                "on_member_join: obteniendo invites del guild %s...",
-                member.guild.id,
-            )
-            invites = await member.guild.invites()
-            logger.info(
-                "on_member_join: guild.invites() devolvió %s invite(s)",
-                len(invites),
+                "on_member_join: guild.invites() devolvió %s invite(s), codes=%s",
+                len(guild_invites),
+                guild_codes,
             )
 
-            for invite in invites:
-                prev = self.invite_uses_snapshot.get(invite.code)
-                logger.info(
-                    "on_member_join: invite code=%s uses=%s snapshot=%s (dict id=%s)",
-                    invite.code,
-                    invite.uses,
-                    prev,
-                    id(self.invite_uses_snapshot),
-                )
-                if prev is not None and invite.uses is not None and invite.uses > prev:
-                    self.invite_uses_snapshot[invite.code] = invite.uses
-                    logger.info(
-                        "on_member_join: invite usado detectado, asignando rol (%s)",
-                        invite.code,
+            pending_sessions = await _fetch_pending_role_sessions()
+            logger.info(
+                "on_member_join: %s sesión(es) pendiente(s) de asignación de rol",
+                len(pending_sessions),
+            )
+
+            for session in pending_sessions:
+                channel_id = int(session["discord_channel_id"])
+                expected_code = _invite_code_from_url(session.get("discord_invite_url"))
+                channel = await _fetch_guild_channel(member.guild, channel_id)
+                if channel is None:
+                    logger.warning(
+                        "on_member_join: canal %s no encontrado (session %s)",
+                        channel_id,
+                        session.get("session_id"),
                     )
-                    await _assign_role_for_invite(member, invite.code)
-                    break
-            else:
+                    continue
+
+                if not hasattr(channel, "invites"):
+                    logger.warning(
+                        "on_member_join: canal %s no soporta invites()",
+                        channel_id,
+                    )
+                    continue
+
+                channel_invites = await channel.invites()
+                channel_summary = [
+                    {"code": invite.code, "uses": invite.uses}
+                    for invite in channel_invites
+                ]
                 logger.info(
-                    "on_member_join: ningún invite trackeado coincidió para %s",
-                    member.name,
+                    "on_member_join: channel.invites() canal %s session %s expected=%s invites=%s",
+                    channel_id,
+                    session.get("session_id"),
+                    expected_code,
+                    channel_summary,
                 )
+
+                for invite in channel_invites:
+                    if expected_code and invite.code != expected_code:
+                        continue
+                    if invite.uses is not None and invite.uses >= 1:
+                        logger.info(
+                            "on_member_join: invite usado en canal %s (%s uses=%s), asignando rol",
+                            channel_id,
+                            invite.code,
+                            invite.uses,
+                        )
+                        await _assign_role_for_invite(member, invite.code)
+                        return
+
+            logger.info(
+                "on_member_join: ningún invite con uses>=1 en canales pendientes para %s",
+                member.name,
+            )
         except Exception:
             logger.exception("Error en on_member_join")
 
@@ -376,12 +451,13 @@ def _build_bot(guild_id: int) -> ATVDiscordBot:
                     unique=True,
                     reason=f"Invite onboarding {name}",
                 )
-                bot.invite_uses_snapshot[invite.code] = 0
+                channel_invites = await discord_channel.invites()
                 logger.info(
-                    "Invite guardado en snapshot: %s, snapshot actual: %s (dict id=%s)",
+                    "Invite creado: code=%s url=%s channel_id=%s channel.invites()=%s",
                     invite.code,
-                    dict(bot.invite_uses_snapshot),
-                    id(bot.invite_uses_snapshot),
+                    invite.url,
+                    discord_channel.id,
+                    [{"code": i.code, "uses": i.uses} for i in channel_invites],
                 )
 
                 patch_resp = await client.patch(
@@ -410,10 +486,10 @@ def _build_bot(guild_id: int) -> ATVDiscordBot:
                 )
             )
             logger.info(
-                "=== /add-client COMPLETADO === invite=%s snapshot=%s bot_id=%s",
+                "=== /add-client COMPLETADO === invite=%s channel_id=%s session=%s",
                 invite.code,
-                dict(bot.invite_uses_snapshot),
-                id(bot),
+                discord_channel.id,
+                session_id,
             )
         except Exception as exc:
             logger.exception("Error en /add-client")

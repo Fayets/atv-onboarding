@@ -208,6 +208,32 @@ class AdminServices:
 
         return schemas.RoleAssignedResponse(session_id=str(session_id))
 
+    def get_pending_role_assignments(
+        self,
+    ) -> schemas.PendingRoleAssignmentResponse:
+        with db_session:
+            pending = [
+                session
+                for session in OnboardingSession.select()
+                if not session.role_assigned and session.discord_channel_id
+            ]
+            pending.sort(
+                key=lambda session: session.created_at
+                or datetime.min.replace(tzinfo=None),
+                reverse=True,
+            )
+            items = [
+                schemas.PendingRoleAssignmentItem(
+                    session_id=str(session.id),
+                    plan=session.plan,
+                    discord_channel_id=session.discord_channel_id,
+                    discord_invite_url=session.discord_invite_url,
+                )
+                for session in pending
+            ]
+
+        return schemas.PendingRoleAssignmentResponse(sessions=items)
+
     def get_dashboard(self) -> schemas.DashboardResponse:
         with db_session:
             sessions = list(OnboardingSession.select().order_by(OnboardingSession.created_at.desc()))

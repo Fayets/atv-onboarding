@@ -104,6 +104,17 @@ class RoleAssignedResponse(BaseModel):
     role_assigned: bool = True
 
 
+class PendingRoleAssignmentItem(BaseModel):
+    session_id: str
+    plan: str | None = None
+    discord_channel_id: str
+    discord_invite_url: str | None = None
+
+
+class PendingRoleAssignmentResponse(BaseModel):
+    sessions: list[PendingRoleAssignmentItem]
+
+
 EstadoOnboarding = Literal[
     "enviado",
     "formulario_completo",

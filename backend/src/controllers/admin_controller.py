@@ -54,6 +54,22 @@ def update_discord_channel(
 
 
 @router.get(
+    "/sessions/pending-role-assignment",
+    response_model=schemas.PendingRoleAssignmentResponse,
+)
+def get_pending_role_assignments(_: str = Depends(verify_admin_key)):
+    try:
+        return service.get_pending_role_assignments()
+    except HTTPException as e:
+        raise e
+    except Exception:
+        raise HTTPException(
+            status_code=500,
+            detail="Error inesperado al obtener sesiones pendientes de rol.",
+        )
+
+
+@router.get(
     "/sessions/by-invite-code/{invite_code}",
     response_model=schemas.SessionByInviteCodeResponse,
 )
