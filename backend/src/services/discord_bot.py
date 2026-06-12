@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import sys
 import threading
 from datetime import datetime
@@ -33,6 +34,7 @@ def _configure_discord_bot_logging() -> None:
 
 _configure_discord_bot_logging()
 logger = logging.getLogger(__name__)
+logger.info("=== discord_bot.py cargado (pid=%s) ===", os.getpid())
 
 PLAN_CATEGORY_PATTERNS = {
     "Boost": "canales atv boost",
@@ -207,17 +209,21 @@ class ATVDiscordBot(discord.Client):
     async def on_ready(self) -> None:
         guild_ids = [g.id for g in self.guilds]
         logger.info(
-            "Bot conectado como %s, guilds: %s (target guild: %s)",
+            "Bot conectado como %s, guilds: %s (target guild: %s, bot_id=%s, pid=%s)",
             self.user,
             guild_ids,
             self.guild_id,
+            id(self),
+            os.getpid(),
         )
 
     async def on_member_join(self, member: discord.Member) -> None:
         logger.info(
-            "on_member_join disparado para: %s (guild %s)",
+            "on_member_join disparado para: %s (guild %s, bot_id=%s, pid=%s)",
             member.name,
             member.guild.id,
+            id(self),
+            os.getpid(),
         )
 
         try:
@@ -290,6 +296,15 @@ def _build_bot(guild_id: int) -> ATVDiscordBot:
         email: str,
         plan: app_commands.Choice[str],
     ) -> None:
+        logger.info(
+            "=== /add-client INVOCADO === pid=%s bot_id=%s thread=%s user=%s channel=%s",
+            os.getpid(),
+            id(bot),
+            threading.current_thread().name,
+            interaction.user,
+            interaction.channel_id,
+        )
+
         allowed_channel = _config("DISCORD_CHANNEL_ENVIAR")
         if not allowed_channel or str(interaction.channel_id) != allowed_channel:
             await interaction.response.send_message(
@@ -394,6 +409,12 @@ def _build_bot(guild_id: int) -> ATVDiscordBot:
                     expires_at=expires_at,
                 )
             )
+            logger.info(
+                "=== /add-client COMPLETADO === invite=%s snapshot=%s bot_id=%s",
+                invite.code,
+                dict(bot.invite_uses_snapshot),
+                id(bot),
+            )
         except Exception as exc:
             logger.exception("Error en /add-client")
             await interaction.followup.send(
@@ -406,6 +427,12 @@ def _build_bot(guild_id: int) -> ATVDiscordBot:
 
 async def _run_bot(token: str, guild_id: int) -> None:
     bot = _build_bot(guild_id)
+    logger.info(
+        "=== Discord bot arrancando (pid=%s, bot_id=%s, guild_id=%s) ===",
+        os.getpid(),
+        id(bot),
+        guild_id,
+    )
     await bot.start(token)
 
 
@@ -427,5 +454,9 @@ def start_discord_bot_thread() -> threading.Thread | None:
 
     thread = threading.Thread(target=run, daemon=True, name="discord-bot")
     thread.start()
-    logger.info("Discord bot iniciado en thread daemon.")
+    logger.info(
+        "Discord bot iniciado en thread daemon (pid=%s, thread=%s).",
+        os.getpid(),
+        thread.name,
+    )
     return thread
