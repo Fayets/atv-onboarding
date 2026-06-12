@@ -46,8 +46,6 @@ PLAN_ROLE_NAMES = {
     "Advantage": "Advantage",
 }
 
-invite_uses_snapshot: dict[str, int] = {}
-
 
 def _config(name: str, default: str = "") -> str:
     return config(name, default=default).strip()
@@ -193,6 +191,7 @@ class ATVDiscordBot(discord.Client):
         intents.members = True
         super().__init__(intents=intents)
         self.guild_id = guild_id
+        self.invite_uses_snapshot: dict[str, int] = {}
         self.tree = app_commands.CommandTree(self)
         logger.info(
             "Discord bot intents: members=%s guilds=%s",
@@ -241,15 +240,16 @@ class ATVDiscordBot(discord.Client):
             )
 
             for invite in invites:
-                prev = invite_uses_snapshot.get(invite.code)
+                prev = self.invite_uses_snapshot.get(invite.code)
                 logger.info(
-                    "on_member_join: invite code=%s uses=%s snapshot=%s",
+                    "on_member_join: invite code=%s uses=%s snapshot=%s (dict id=%s)",
                     invite.code,
                     invite.uses,
                     prev,
+                    id(self.invite_uses_snapshot),
                 )
                 if prev is not None and invite.uses is not None and invite.uses > prev:
-                    invite_uses_snapshot[invite.code] = invite.uses
+                    self.invite_uses_snapshot[invite.code] = invite.uses
                     logger.info(
                         "on_member_join: invite usado detectado, asignando rol (%s)",
                         invite.code,
@@ -361,7 +361,13 @@ def _build_bot(guild_id: int) -> ATVDiscordBot:
                     unique=True,
                     reason=f"Invite onboarding {name}",
                 )
-                invite_uses_snapshot[invite.code] = 0
+                bot.invite_uses_snapshot[invite.code] = 0
+                logger.info(
+                    "Invite guardado en snapshot: %s, snapshot actual: %s (dict id=%s)",
+                    invite.code,
+                    dict(bot.invite_uses_snapshot),
+                    id(bot.invite_uses_snapshot),
+                )
 
                 patch_resp = await client.patch(
                     f"{api_base}/api/admin/sessions/{session_id}/discord-channel",
