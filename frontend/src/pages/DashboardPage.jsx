@@ -90,6 +90,7 @@ export default function DashboardPage() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [unauthorized, setUnauthorized] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState(null);
 
   const [search, setSearch] = useState('');
@@ -107,12 +108,13 @@ export default function DashboardPage() {
 
   const loadDashboard = useCallback(async () => {
     setError('');
+    setUnauthorized(false);
     try {
       const data = await getDashboard();
       setSessions(data.sessions || []);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
-        setError('Acceso no autorizado. Ingresá desde ATV Ecosystem.');
+        setUnauthorized(true);
       } else {
         setError(err.message || 'No se pudo cargar el dashboard.');
       }
@@ -260,6 +262,31 @@ export default function DashboardPage() {
     setFormModalData(null);
     setFormModalError('');
     setFormModalLoading(false);
+  }
+
+  if (!loading && unauthorized) {
+    return (
+      <Layout title="Dashboard — ATV" fullScreen>
+        <div className="dashboard-page" data-theme="dark">
+          <div className="shell-card shell-fullscreen dashboard-shell flex flex-col w-full min-h-0 flex-1 overflow-hidden">
+            <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 text-center">
+              <img
+                src={LOGO_URL}
+                alt="Aumenta Tu Valor"
+                width="160"
+                className="dashboard-logo mb-8 max-w-[160px] h-auto"
+              />
+              <h1 className="dashboard-title text-[28px] md:text-[36px] font-bold tracking-[-0.03em] mb-3">
+                Acceso no autorizado
+              </h1>
+              <p className="dashboard-muted text-[15px] md:text-[16px] max-w-sm leading-relaxed">
+                Ingresá desde ATV Ecosystem
+              </p>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
   }
 
   return (
