@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Environment
+.env
+backend/.env
+
+# Build
+frontend/dist/
+dist/
+.astro/
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Logs
+*.log
+
+# Python
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
