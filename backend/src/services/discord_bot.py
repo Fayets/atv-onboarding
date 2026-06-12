@@ -64,8 +64,9 @@ def _find_category(guild: discord.Guild, plan: str) -> discord.CategoryChannel |
     return None
 
 
-def _staff_overwrites(
+def _channel_overwrites(
     guild: discord.Guild,
+    plan: str,
 ) -> dict[Any, discord.PermissionOverwrite]:
     overwrites: dict[Any, discord.PermissionOverwrite] = {
         guild.default_role: discord.PermissionOverwrite(view_channel=False),
@@ -75,6 +76,18 @@ def _staff_overwrites(
             manage_channels=True,
         ),
     }
+
+    role_name = PLAN_ROLE_NAMES.get(plan)
+    if role_name:
+        plan_role = discord.utils.get(guild.roles, name=role_name)
+        if plan_role:
+            overwrites[plan_role] = discord.PermissionOverwrite(
+                view_channel=True,
+                send_messages=True,
+                read_message_history=True,
+            )
+        else:
+            logger.warning("Rol de plan no encontrado en el servidor: %s", role_name)
 
     for env_key in ("DISCORD_STAFF_NICK_ID", "DISCORD_STAFF_ALE_ID"):
         staff_id = _config(env_key)
@@ -468,7 +481,7 @@ def _build_bot(guild_id: int) -> ATVDiscordBot:
                     )
                     return
 
-                overwrites = _staff_overwrites(interaction.guild)
+                overwrites = _channel_overwrites(interaction.guild, plan_value)
                 discord_channel = await interaction.guild.create_text_channel(
                     name=channel_slug,
                     category=category,
