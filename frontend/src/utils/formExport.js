@@ -1,17 +1,7 @@
-export const FORM_RESPONSE_FIELDS = [
-  { key: 'nombre', label: 'Nombre completo y/o canal de Discord' },
-  { key: 'perfil', label: 'Perfil' },
-  { key: 'nicho', label: 'Nicho o industria' },
-  { key: 'oferta', label: 'Oferta' },
-  { key: 'precio', label: 'Precio de la oferta principal' },
-  { key: 'cliente_ideal', label: 'Cliente ideal' },
-  { key: 'facturacion_actual', label: 'Facturación actual' },
-  { key: 'meta_90', label: 'Meta de facturación (90 días)' },
-  { key: 'activos', label: 'Activos en el negocio' },
-  { key: 'objetivo', label: 'Objetivo principal' },
-  { key: 'obstaculos', label: 'Obstáculos' },
-  { key: 'extra', label: 'Información adicional' },
-];
+import {
+  formatFormResponseValue,
+  getFormDisplaySections,
+} from '../constants/onboardingFormFields';
 
 function slugifyFilename(value) {
   return (
@@ -26,6 +16,7 @@ function slugifyFilename(value) {
 
 export function buildFormDownloadContent(data) {
   const responses = data?.form_data || {};
+  const sections = getFormDisplaySections(responses);
   const lines = [
     'FORMULARIO DE ONBOARDING — AUMENTA TU VALOR',
     '',
@@ -48,10 +39,15 @@ export function buildFormDownloadContent(data) {
 
   lines.push('', '─'.repeat(50), '');
 
-  for (const { key, label } of FORM_RESPONSE_FIELDS) {
-    const value = responses[key];
-    const text = value && String(value).trim() ? String(value).trim() : '—';
-    lines.push(`${label}`, text, '');
+  for (const section of sections) {
+    if (section.title) {
+      lines.push(section.title, '');
+    }
+
+    for (const { id, label } of section.questions) {
+      const text = formatFormResponseValue(responses[id]);
+      lines.push(`${id}. ${label}`, text, '');
+    }
   }
 
   return lines.join('\n');

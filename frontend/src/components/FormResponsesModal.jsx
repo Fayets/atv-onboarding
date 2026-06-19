@@ -1,14 +1,14 @@
-import { FORM_RESPONSE_FIELDS, downloadFormFile } from '../utils/formExport';
-
-function formatValue(value) {
-  if (!value || !String(value).trim()) return '—';
-  return String(value);
-}
+import {
+  formatFormResponseValue,
+  getFormDisplaySections,
+} from '../constants/onboardingFormFields';
+import { downloadFormFile } from '../utils/formExport';
 
 export default function FormResponsesModal({ open, theme = 'dark', sessionMeta, formData, loading, error, onClose }) {
   if (!open) return null;
 
   const responses = formData?.form_data || {};
+  const sections = getFormDisplaySections(responses);
 
   return (
     <div
@@ -47,29 +47,38 @@ export default function FormResponsesModal({ open, theme = 'dark', sessionMeta, 
             </p>
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto pr-1 flex flex-col gap-3">
+          <div className="flex-1 min-h-0 overflow-y-auto pr-1 flex flex-col gap-5">
             {loading && (
               <p className="text-[14px] text-[rgba(255,255,255,0.45)] tracking-[-0.01em]">Cargando respuestas...</p>
             )}
             {error && !loading && (
               <p className="text-[13px] text-[#e63946] tracking-[-0.01em]">{error}</p>
             )}
-            {!loading && !error && FORM_RESPONSE_FIELDS.map(({ key, label }) => (
-              <div
-                key={key}
-                className={`rounded-lg border px-4 py-3 ${
-                  theme === 'light'
-                    ? 'border-[rgba(17,24,39,0.08)] bg-[rgba(17,24,39,0.02)]'
-                    : 'border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)]'
-                }`}
-              >
-                <p className={`text-[11px] uppercase tracking-[0.08em] mb-1.5 ${theme === 'light' ? 'text-[rgba(17,24,39,0.45)]' : 'text-[rgba(255,255,255,0.4)]'}`}>
-                  {label}
-                </p>
-                <p className={`text-[14px] leading-relaxed whitespace-pre-wrap tracking-[-0.01em] ${theme === 'light' ? 'text-[rgba(17,24,39,0.88)]' : 'text-[rgba(255,255,255,0.85)]'}`}>
-                  {formatValue(responses[key])}
-                </p>
-              </div>
+            {!loading && !error && sections.map((section) => (
+              <section key={section.title || 'legacy'} className="flex flex-col gap-3">
+                {section.title && (
+                  <h3 className={`text-[11px] font-semibold uppercase tracking-[0.08em] ${theme === 'light' ? 'text-[#e63946]' : 'text-[#e63946]'}`}>
+                    {section.title}
+                  </h3>
+                )}
+                {section.questions.map(({ id, label }) => (
+                  <div
+                    key={id}
+                    className={`rounded-lg border px-4 py-3 ${
+                      theme === 'light'
+                        ? 'border-[rgba(17,24,39,0.08)] bg-[rgba(17,24,39,0.02)]'
+                        : 'border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)]'
+                    }`}
+                  >
+                    <p className={`text-[11px] uppercase tracking-[0.08em] mb-1.5 ${theme === 'light' ? 'text-[rgba(17,24,39,0.45)]' : 'text-[rgba(255,255,255,0.4)]'}`}>
+                      {id}. {label}
+                    </p>
+                    <p className={`text-[14px] leading-relaxed whitespace-pre-wrap tracking-[-0.01em] ${theme === 'light' ? 'text-[rgba(17,24,39,0.88)]' : 'text-[rgba(255,255,255,0.85)]'}`}>
+                      {formatFormResponseValue(responses[id])}
+                    </p>
+                  </div>
+                ))}
+              </section>
             ))}
           </div>
 
