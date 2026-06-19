@@ -48,6 +48,11 @@ PLAN_ROLE_NAMES = {
     "Advantage": "Advantage",
 }
 
+WELCOME_SCRIPT_FIELD_NAME = (
+    "📋 Script de bienvenida — copiá y pegá en el canal del cliente"
+)
+DISCORD_EMBED_FIELD_VALUE_MAX = 1024
+
 
 def _config(name: str, default: str = "") -> str:
     return config(name, default=default).strip()
@@ -109,13 +114,50 @@ def _format_datetime(value: datetime | str) -> str:
     return value.strftime("%d/%m/%Y, %H:%M:%S")
 
 
+def _build_welcome_script(name: str) -> str:
+    return (
+        f"@{name}, este es tu canal privado dentro de ATV. Acá vas a tener seguimiento "
+        f"directo con el equipo durante el programa. Cualquier duda, avance o entrega, "
+        f"la podés traer por acá.\n"
+        "ONBOARDING OBLIGATORIO — hacerlo hoy\n"
+        "Paso 1 — Revisá tu mail\n"
+        "\n"
+        "Te llegó un correo de ATV con:\n"
+        "\n"
+        "Link al onboarding\n"
+        "Tu contraseña de acceso (válida 24 horas)\n"
+        "\n"
+        "Paso 2 — Completá el onboarding\n"
+        "\n"
+        "Entrá al link, iniciá sesión y recorré todos los pasos hasta el final:\n"
+        "\n"
+        "Bienvenida y cómo trabajamos\n"
+        "Video de bienvenida (obligatorio verlo completo)\n"
+        "Unirte a Discord y activar tu invitación a Skool\n"
+        "Completar tu perfil (formulario)\n"
+        "Revisar próximos pasos\n"
+        "\n"
+        "Paso 3 — Después del onboarding\n"
+        "\n"
+        "Una vez que termines todo:\n"
+        "\n"
+        "Presentate en este canal (quién sos y qué querés lograr)\n"
+        "Vamos a coordinar la primera sesión por acá, avisanos cuando hayas completado "
+        "todo y te enviamos el link de Calendly [juan/ale]\n"
+        "\n"
+        "Si algo no te llega al mail o la contraseña expiró, avisame acá y lo resolvemos.\n"
+        "\n"
+        "¡Bienvenido a ATV!"
+    )
+
+
 def _build_success_embed(
     name: str,
     email: str,
     plan: str,
     password: str,
     expires_at: str,
-) -> discord.Embed:
+) -> tuple[discord.Embed, str | None]:
     embed = discord.Embed(
         title="ONBOARDING ENVIADO! ✅",
         description=(
@@ -135,7 +177,19 @@ def _build_success_embed(
         value=_format_datetime(datetime.now()),
         inline=True,
     )
-    return embed
+
+    welcome_script = _build_welcome_script(name)
+    script_overflow: str | None = None
+    if len(welcome_script) <= DISCORD_EMBED_FIELD_VALUE_MAX:
+        embed.add_field(
+            name=WELCOME_SCRIPT_FIELD_NAME,
+            value=welcome_script,
+            inline=False,
+        )
+    else:
+        script_overflow = welcome_script
+
+    return embed, script_overflow
 
 
 def _invite_code_from_url(url: str | None) -> str | None:
@@ -520,15 +574,16 @@ def _build_bot(guild_id: int) -> ATVDiscordBot:
                     )
                     return
 
-            await interaction.followup.send(
-                embed=_build_success_embed(
-                    name=name,
-                    email=email,
-                    plan=plan_value,
-                    password=password,
-                    expires_at=expires_at,
-                )
+            success_embed, welcome_script_overflow = _build_success_embed(
+                name=name,
+                email=email,
+                plan=plan_value,
+                password=password,
+                expires_at=expires_at,
             )
+            await interaction.followup.send(embed=success_embed)
+            if welcome_script_overflow:
+                await interaction.followup.send(welcome_script_overflow)
             logger.info(
                 "=== /add-client COMPLETADO === invite=%s channel_id=%s session=%s",
                 invite.code,
