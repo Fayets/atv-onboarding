@@ -71,6 +71,11 @@ export async function getDashboard() {
   return parseResponse(res);
 }
 
+export async function getMetrics() {
+  const res = await fetch('/api/admin/metrics', defaultOptions);
+  return parseResponse(res);
+}
+
 export async function getSessionForm(sessionId) {
   const res = await fetch(`/api/admin/sessions/${sessionId}/form`, defaultOptions);
   return parseResponse(res);

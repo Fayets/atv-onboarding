@@ -6,9 +6,11 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from src import schemas
 from src.deps import verify_ecosystem_session
 from src.services.admin_services import AdminServices
+from src.services.metrics_services import MetricsServices
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 service = AdminServices()
+metrics_service = MetricsServices()
 
 
 def verify_admin_key(x_admin_key: str = Header(..., alias="X-Admin-Key")) -> str:
@@ -118,6 +120,19 @@ def get_dashboard(_: str = Depends(verify_ecosystem_session)):
         raise HTTPException(
             status_code=500,
             detail="Error inesperado al obtener el dashboard.",
+        )
+
+
+@router.get("/metrics", response_model=schemas.MetricsResponse)
+def get_metrics(_: str = Depends(verify_ecosystem_session)):
+    try:
+        return metrics_service.get_metrics()
+    except HTTPException as e:
+        raise e
+    except Exception:
+        raise HTTPException(
+            status_code=500,
+            detail="Error inesperado al obtener las métricas.",
         )
 
 

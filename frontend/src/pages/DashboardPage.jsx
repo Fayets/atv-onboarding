@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout, { LOGO_URL } from '../components/Layout';
 import FormResponsesModal from '../components/FormResponsesModal';
 import {
@@ -86,6 +87,7 @@ function SortIndicator({ active, direction }) {
 }
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
   const [theme, setTheme] = useState(getInitialTheme);
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -304,6 +306,13 @@ export default function DashboardPage() {
                   title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
                 >
                   {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/metrics')}
+                  className="dashboard-btn-secondary rounded-lg px-4 py-2.5 text-[14px] cursor-pointer"
+                >
+                  Métricas
                 </button>
                 <button
                   type="button"

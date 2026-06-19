@@ -158,3 +158,9 @@ class SessionFormResponse(BaseModel):
     plan: str | None = None
     submitted_at: datetime | None = None
     form_data: FormSubmitRequest
+
+
+class MetricsResponse(BaseModel):
+    total_sessions: int
+    with_form: int
+    metrics: dict[str, dict[str, int]]
