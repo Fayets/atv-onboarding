@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class LoginRequest(BaseModel):
@@ -14,18 +14,7 @@ class LoginResponse(BaseModel):
 
 
 class FormSubmitRequest(BaseModel):
-    nombre: str | None = None
-    perfil: str | None = None
-    nicho: str | None = None
-    oferta: str | None = None
-    precio: str | None = None
-    cliente_ideal: str | None = None
-    facturacion_actual: str | None = None
-    meta_90: str | None = None
-    activos: str | None = None
-    objetivo: str | None = None
-    obstaculos: str | None = None
-    extra: str | None = None
+    model_config = ConfigDict(extra="allow")
 
 
 class SessionResponse(BaseModel):
