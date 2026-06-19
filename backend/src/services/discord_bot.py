@@ -82,18 +82,6 @@ def _channel_overwrites(
         ),
     }
 
-    role_name = PLAN_ROLE_NAMES.get(plan)
-    if role_name:
-        plan_role = discord.utils.get(guild.roles, name=role_name)
-        if plan_role:
-            overwrites[plan_role] = discord.PermissionOverwrite(
-                view_channel=True,
-                send_messages=True,
-                read_message_history=True,
-            )
-        else:
-            logger.warning("Rol de plan no encontrado en el servidor: %s", role_name)
-
     for env_key in ("DISCORD_STAFF_NICK_ID", "DISCORD_STAFF_ALE_ID"):
         staff_id = _config(env_key)
         if not staff_id:
