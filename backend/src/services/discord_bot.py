@@ -38,7 +38,7 @@ logger.info("=== discord_bot.py cargado (pid=%s) ===", os.getpid())
 
 PLAN_CATEGORY_PATTERNS = {
     "Boost": "canales atv boost",
-    "Mentoría": "canales atv mentoria",
+    "Mentoría": "canales privados avanzados",
     "Advantage": "canales atv advantage",
 }
 
