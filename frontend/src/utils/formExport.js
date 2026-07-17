@@ -1,7 +1,20 @@
+import { LOGO_URL } from '../components/Layout';
 import {
   formatFormResponseValue,
   getFormDisplaySections,
 } from '../constants/onboardingFormFields';
+
+const ATV_COLORS = {
+  red: '#e63946',
+  redDark: '#c1121f',
+  dark: '#111827',
+  darkSoft: '#1f2937',
+  text: '#111827',
+  muted: '#6b7280',
+  border: '#e5e7eb',
+  surface: '#f9fafb',
+  white: '#ffffff',
+};
 
 function slugifyFilename(value) {
   return (
@@ -14,6 +27,17 @@ function slugifyFilename(value) {
   );
 }
 
+function formatSubmittedAt(value) {
+  if (!value) return null;
+  return new Date(value).toLocaleString('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 function buildFormMetadataLines(data) {
   const lines = [
     `Cliente: ${data?.client_name || '—'}`,
@@ -21,16 +45,9 @@ function buildFormMetadataLines(data) {
     `Plan: ${data?.plan || '—'}`,
   ];
 
-  if (data?.submitted_at) {
-    lines.push(
-      `Enviado: ${new Date(data.submitted_at).toLocaleString('es-AR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      })}`,
-    );
+  const submittedAt = formatSubmittedAt(data?.submitted_at);
+  if (submittedAt) {
+    lines.push(`Enviado: ${submittedAt}`);
   }
 
   return lines;
@@ -62,58 +79,278 @@ export function buildFormDownloadContent(data) {
   return lines.join('\n');
 }
 
-function buildFormPdfDefinition(data) {
+async function fetchLogoAsBase64() {
+  try {
+    const response = await fetch(LOGO_URL);
+    if (!response.ok) return null;
+
+    const blob = await response.blob();
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(typeof reader.result === 'string' ? reader.result : null);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+function buildPdfHeader(logoBase64) {
+  const brandStack = logoBase64
+    ? [{ image: logoBase64, width: 96, alignment: 'center', margin: [0, 0, 0, 10] }]
+    : [{ text: 'ATV', style: 'brandFallback', alignment: 'center', margin: [0, 0, 0, 10] }];
+
+  return {
+    table: {
+      widths: ['*'],
+      body: [
+        [
+          {
+            stack: [
+              ...brandStack,
+              {
+                text: 'FORMULARIO DE ONBOARDING',
+                style: 'headerTitle',
+                alignment: 'center',
+              },
+              {
+                text: 'AUMENTA TU VALOR',
+                style: 'headerSubtitle',
+                alignment: 'center',
+                margin: [0, 4, 0, 0],
+              },
+            ],
+            fillColor: ATV_COLORS.dark,
+            margin: [24, 28, 24, 28],
+            border: [false, false, false, false],
+          },
+        ],
+      ],
+    },
+    layout: 'noBorders',
+    margin: [-40, -48, -40, 0],
+  };
+}
+
+function buildPdfMetadataCard(data) {
+  const submittedAt = formatSubmittedAt(data?.submitted_at);
+  const rows = [
+    ['Cliente', data?.client_name || '—'],
+    ['Email', data?.client_email || '—'],
+    ['Plan', data?.plan || '—'],
+  ];
+
+  if (submittedAt) {
+    rows.push(['Enviado', submittedAt]);
+  }
+
+  return {
+    table: {
+      widths: ['28%', '72%'],
+      body: rows.map(([label, value], index) => [
+        {
+          text: label,
+          style: 'metaLabel',
+          fillColor: index % 2 === 0 ? ATV_COLORS.surface : ATV_COLORS.white,
+          border: [false, false, false, true],
+          borderColor: [ATV_COLORS.border, ATV_COLORS.border, ATV_COLORS.border, ATV_COLORS.border],
+        },
+        {
+          text: value,
+          style: label === 'Plan' ? 'metaPlan' : 'metaValue',
+          fillColor: index % 2 === 0 ? ATV_COLORS.surface : ATV_COLORS.white,
+          border: [false, false, false, true],
+          borderColor: [ATV_COLORS.border, ATV_COLORS.border, ATV_COLORS.border, ATV_COLORS.border],
+        },
+      ]),
+    },
+    layout: {
+      hLineWidth: () => 0,
+      vLineWidth: () => 0,
+      paddingLeft: () => 12,
+      paddingRight: () => 12,
+      paddingTop: () => 8,
+      paddingBottom: () => 8,
+    },
+    margin: [0, 20, 0, 16],
+  };
+}
+
+function buildPdfSectionTitle(title) {
+  return {
+    table: {
+      widths: ['*'],
+      body: [
+        [
+          {
+            text: title,
+            style: 'sectionTitle',
+            fillColor: ATV_COLORS.red,
+            color: ATV_COLORS.white,
+            margin: [12, 8, 12, 8],
+            border: [false, false, false, false],
+          },
+        ],
+      ],
+    },
+    layout: 'noBorders',
+    margin: [0, 14, 0, 10],
+  };
+}
+
+function buildPdfQuestionBlock(id, label, answer) {
+  return {
+    stack: [
+      {
+        text: `${id}. ${label}`,
+        style: 'question',
+        margin: [0, 0, 0, 6],
+      },
+      {
+        table: {
+          widths: ['*'],
+          body: [
+            [
+              {
+                text: answer,
+                style: 'answer',
+                fillColor: ATV_COLORS.surface,
+                border: [true, true, true, true],
+                borderColor: [
+                  ATV_COLORS.border,
+                  ATV_COLORS.border,
+                  ATV_COLORS.border,
+                  ATV_COLORS.red,
+                ],
+                margin: [12, 10, 12, 10],
+              },
+            ],
+          ],
+        },
+        layout: {
+          hLineWidth: () => 1,
+          vLineWidth: () => 1,
+          paddingLeft: () => 0,
+          paddingRight: () => 0,
+          paddingTop: () => 0,
+          paddingBottom: () => 0,
+        },
+      },
+    ],
+    margin: [0, 0, 0, 10],
+    unbreakable: false,
+  };
+}
+
+async function buildFormPdfDefinition(data) {
   const responses = data?.form_data || {};
   const sections = getFormDisplaySections(responses);
+  const logoBase64 = await fetchLogoAsBase64();
+
   const content = [
+    buildPdfHeader(logoBase64),
+    buildPdfMetadataCard(data),
     {
-      text: 'FORMULARIO DE ONBOARDING — AUMENTA TU VALOR',
-      style: 'header',
-      margin: [0, 0, 0, 12],
+      canvas: [
+        {
+          type: 'line',
+          x1: 0,
+          y1: 0,
+          x2: 515,
+          y2: 0,
+          lineWidth: 2,
+          lineColor: ATV_COLORS.red,
+        },
+      ],
+      margin: [0, 0, 0, 8],
     },
-    ...buildFormMetadataLines(data).map((line) => ({
-      text: line,
-      margin: [0, 0, 0, 4],
-    })),
-    { text: ' ', margin: [0, 8, 0, 8] },
   ];
 
   for (const section of sections) {
     if (section.title) {
-      content.push({
-        text: section.title,
-        style: 'sectionTitle',
-        margin: [0, 12, 0, 8],
-      });
+      content.push(buildPdfSectionTitle(section.title));
     }
 
     for (const { id, label } of section.questions) {
-      content.push({
-        text: `${id}. ${label}`,
-        style: 'question',
-        margin: [0, 8, 0, 4],
-      });
-      content.push({
-        text: formatFormResponseValue(responses[id]),
-        style: 'answer',
-        margin: [0, 0, 0, 8],
-      });
+      content.push(
+        buildPdfQuestionBlock(id, label, formatFormResponseValue(responses[id])),
+      );
     }
   }
 
   return {
     content,
     styles: {
-      header: { fontSize: 14, bold: true },
-      sectionTitle: { fontSize: 10, bold: true, color: '#444444' },
-      question: { fontSize: 9, bold: true, color: '#333333' },
-      answer: { fontSize: 9, color: '#111111' },
+      brandFallback: {
+        fontSize: 28,
+        bold: true,
+        color: ATV_COLORS.red,
+      },
+      headerTitle: {
+        fontSize: 13,
+        bold: true,
+        color: ATV_COLORS.white,
+        characterSpacing: 1.2,
+      },
+      headerSubtitle: {
+        fontSize: 9,
+        color: '#b8bcc4',
+        characterSpacing: 2,
+      },
+      metaLabel: {
+        fontSize: 8,
+        bold: true,
+        color: ATV_COLORS.muted,
+      },
+      metaValue: {
+        fontSize: 9,
+        color: ATV_COLORS.text,
+      },
+      metaPlan: {
+        fontSize: 9,
+        bold: true,
+        color: ATV_COLORS.red,
+      },
+      sectionTitle: {
+        fontSize: 8.5,
+        bold: true,
+      },
+      question: {
+        fontSize: 8.5,
+        bold: true,
+        color: ATV_COLORS.darkSoft,
+      },
+      answer: {
+        fontSize: 9,
+        color: ATV_COLORS.text,
+        lineHeight: 1.35,
+      },
+      footer: {
+        fontSize: 7.5,
+        color: ATV_COLORS.muted,
+      },
     },
     defaultStyle: {
       font: 'Roboto',
       fontSize: 9,
     },
-    pageMargins: [40, 48, 40, 48],
+    pageMargins: [40, 48, 40, 56],
+    footer: (currentPage, pageCount) => ({
+      columns: [
+        {
+          text: 'ATV — Aumenta Tu Valor',
+          style: 'footer',
+          alignment: 'left',
+        },
+        {
+          text: `Página ${currentPage} de ${pageCount}`,
+          style: 'footer',
+          alignment: 'right',
+        },
+      ],
+      margin: [40, 16, 40, 0],
+    }),
   };
 }
 
@@ -139,7 +376,8 @@ async function downloadPdfFile(data) {
   pdfMake.vfs = vfs;
 
   const filename = `formulario-${slugifyFilename(data?.client_name)}.pdf`;
-  pdfMake.createPdf(buildFormPdfDefinition(data)).download(filename);
+  const docDefinition = await buildFormPdfDefinition(data);
+  pdfMake.createPdf(docDefinition).download(filename);
 }
 
 export async function downloadFormFile(data, format = 'txt') {
