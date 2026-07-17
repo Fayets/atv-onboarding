@@ -6,13 +6,10 @@ import {
 
 const ATV_COLORS = {
   red: '#e63946',
-  redDark: '#c1121f',
   dark: '#111827',
   darkSoft: '#1f2937',
   text: '#111827',
   muted: '#6b7280',
-  border: '#e5e7eb',
-  surface: '#f9fafb',
   white: '#ffffff',
 };
 
@@ -146,34 +143,19 @@ function buildPdfMetadataCard(data) {
   }
 
   return {
-    table: {
-      widths: ['28%', '72%'],
-      body: rows.map(([label, value], index) => [
-        {
-          text: label,
-          style: 'metaLabel',
-          fillColor: index % 2 === 0 ? ATV_COLORS.surface : ATV_COLORS.white,
-          border: [false, false, false, true],
-          borderColor: [ATV_COLORS.border, ATV_COLORS.border, ATV_COLORS.border, ATV_COLORS.border],
-        },
+    stack: rows.map(([label, value]) => ({
+      columns: [
+        { text: `${label}:`, width: 72, style: 'metaLabel' },
         {
           text: value,
           style: label === 'Plan' ? 'metaPlan' : 'metaValue',
-          fillColor: index % 2 === 0 ? ATV_COLORS.surface : ATV_COLORS.white,
-          border: [false, false, false, true],
-          borderColor: [ATV_COLORS.border, ATV_COLORS.border, ATV_COLORS.border, ATV_COLORS.border],
         },
-      ]),
-    },
-    layout: {
-      hLineWidth: () => 0,
-      vLineWidth: () => 0,
-      paddingLeft: () => 12,
-      paddingRight: () => 12,
-      paddingTop: () => 8,
-      paddingBottom: () => 8,
-    },
+      ],
+      columnGap: 8,
+      margin: [0, 0, 0, 6],
+    })),
     margin: [0, 20, 0, 16],
+    unbreakable: true,
   };
 }
 
@@ -205,41 +187,15 @@ function buildPdfQuestionBlock(id, label, answer) {
       {
         text: `${id}. ${label}`,
         style: 'question',
-        margin: [0, 0, 0, 6],
+        margin: [0, 0, 0, 4],
       },
       {
-        table: {
-          widths: ['*'],
-          body: [
-            [
-              {
-                text: answer,
-                style: 'answer',
-                fillColor: ATV_COLORS.surface,
-                border: [true, true, true, true],
-                borderColor: [
-                  ATV_COLORS.border,
-                  ATV_COLORS.border,
-                  ATV_COLORS.border,
-                  ATV_COLORS.red,
-                ],
-                margin: [12, 10, 12, 10],
-              },
-            ],
-          ],
-        },
-        layout: {
-          hLineWidth: () => 1,
-          vLineWidth: () => 1,
-          paddingLeft: () => 0,
-          paddingRight: () => 0,
-          paddingTop: () => 0,
-          paddingBottom: () => 0,
-        },
+        text: answer,
+        style: 'answer',
+        margin: [0, 0, 0, 12],
       },
     ],
-    margin: [0, 0, 0, 10],
-    unbreakable: false,
+    unbreakable: true,
   };
 }
 
@@ -268,15 +224,24 @@ async function buildFormPdfDefinition(data) {
   ];
 
   for (const section of sections) {
+    const questionBlocks = section.questions.map(({ id, label }) =>
+      buildPdfQuestionBlock(id, label, formatFormResponseValue(responses[id])),
+    );
+
+    if (section.title && questionBlocks.length > 0) {
+      content.push({
+        stack: [buildPdfSectionTitle(section.title), questionBlocks[0]],
+        unbreakable: true,
+      });
+      content.push(...questionBlocks.slice(1));
+      continue;
+    }
+
     if (section.title) {
       content.push(buildPdfSectionTitle(section.title));
     }
 
-    for (const { id, label } of section.questions) {
-      content.push(
-        buildPdfQuestionBlock(id, label, formatFormResponseValue(responses[id])),
-      );
-    }
+    content.push(...questionBlocks);
   }
 
   return {
