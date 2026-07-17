@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { downloadFormFile } from '../utils/formExport';
 
 const QUESTION_LABELS = {
@@ -66,10 +67,24 @@ function sortFormKeys(keys) {
 }
 
 export default function FormResponsesModal({ open, theme = 'dark', sessionMeta, formData, loading, error, onClose }) {
+  const [showFormatPicker, setShowFormatPicker] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      setShowFormatPicker(false);
+    }
+  }, [open]);
+
   if (!open) return null;
 
   const responses = formData?.form_data || {};
   const responseKeys = sortFormKeys(Object.keys(responses));
+
+  const handleDownload = async (format) => {
+    if (!formData) return;
+    await downloadFormFile(formData, format);
+    setShowFormatPicker(false);
+  };
 
   return (
     <div
@@ -144,14 +159,55 @@ export default function FormResponsesModal({ open, theme = 'dark', sessionMeta, 
             >
               Cerrar
             </button>
-            <button
-              type="button"
-              onClick={() => formData && downloadFormFile(formData)}
-              disabled={loading || !formData}
-              className="w-full rounded-lg px-4 py-2.5 text-[13px] font-semibold font-sans tracking-[-0.01em] cursor-pointer border-0 text-white btn-primary disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Descargar formulario
-            </button>
+            {showFormatPicker ? (
+              <>
+                <p
+                  className={`text-[13px] text-center tracking-[-0.01em] ${
+                    theme === 'light' ? 'text-[rgba(17,24,39,0.65)]' : 'text-[rgba(255,255,255,0.65)]'
+                  }`}
+                >
+                  ¿En qué formato querés descargar?
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleDownload('pdf')}
+                    disabled={loading || !formData}
+                    className="w-full rounded-lg px-4 py-2.5 text-[13px] font-semibold font-sans tracking-[-0.01em] cursor-pointer border-0 text-white btn-primary disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    PDF
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDownload('txt')}
+                    disabled={loading || !formData}
+                    className={`w-full rounded-lg px-4 py-2.5 text-[13px] font-semibold font-sans tracking-[-0.01em] cursor-pointer border disabled:opacity-40 disabled:cursor-not-allowed ${
+                      theme === 'light' ? 'dashboard-btn-secondary' : 'btn-secondary'
+                    }`}
+                  >
+                    TXT
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowFormatPicker(false)}
+                  className={`w-full rounded-lg px-4 py-2 text-[12px] font-sans tracking-[-0.01em] cursor-pointer border-0 bg-transparent ${
+                    theme === 'light' ? 'text-[rgba(17,24,39,0.45)]' : 'text-[rgba(255,255,255,0.45)]'
+                  }`}
+                >
+                  Volver
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowFormatPicker(true)}
+                disabled={loading || !formData}
+                className="w-full rounded-lg px-4 py-2.5 text-[13px] font-semibold font-sans tracking-[-0.01em] cursor-pointer border-0 text-white btn-primary disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Descargar formulario
+              </button>
+            )}
           </div>
         </div>
       </div>
