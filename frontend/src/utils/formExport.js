@@ -131,12 +131,12 @@ function downloadTxtFile(data) {
 }
 
 async function downloadPdfFile(data) {
-  const [{ default: pdfMake }, pdfFonts] = await Promise.all([
+  const [{ default: pdfMake }, { default: vfs }] = await Promise.all([
     import('pdfmake/build/pdfmake'),
     import('pdfmake/build/vfs_fonts'),
   ]);
 
-  pdfMake.vfs = pdfFonts.pdfMake.vfs;
+  pdfMake.vfs = vfs;
 
   const filename = `formulario-${slugifyFilename(data?.client_name)}.pdf`;
   pdfMake.createPdf(buildFormPdfDefinition(data)).download(filename);
