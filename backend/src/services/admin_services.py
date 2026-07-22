@@ -115,7 +115,7 @@ class AdminServices:
         ).decode("utf-8")
         channel_slug = slugify_name(payload.name)
         now = datetime.now(timezone.utc).replace(tzinfo=None)
-        expires_at = now + timedelta(hours=24)
+        expires_at = now + timedelta(hours=48)
         session_id = uuid.uuid4()
 
         with db_session:

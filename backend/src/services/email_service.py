@@ -91,7 +91,7 @@ def _build_html(
                 Bienvenido a ATV, {name}
               </h1>
               <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:rgba(255,255,255,0.75);text-align:center;">
-                Tu acceso al onboarding ya está listo. Tenés <strong style="color:#ffffff;">24 horas</strong> para ingresar y completar el proceso antes de que expire tu acceso.
+                Tu acceso al onboarding ya está listo. Tenés <strong style="color:#ffffff;">48 horas</strong> para ingresar y completar el proceso antes de que expire tu acceso.
               </p>
               <p style="margin:0 0 24px;font-size:14px;line-height:1.6;color:rgba(255,255,255,0.55);text-align:center;">
                 Plan: <strong style="color:#ffffff;">{plan}</strong><br />

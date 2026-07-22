@@ -113,7 +113,7 @@ def _build_welcome_script(name: str) -> str:
         "Te llegó un correo de ATV con:\n"
         "\n"
         "Link al onboarding\n"
-        "Tu contraseña de acceso (válida 24 horas)\n"
+        "Tu contraseña de acceso (válida 48 horas)\n"
         "\n"
         "Paso 2 — Completá el onboarding\n"
         "\n"
@@ -150,7 +150,7 @@ def _build_success_embed(
         title="ONBOARDING ENVIADO! ✅",
         description=(
             "El acceso fue creado y enviado correctamente. El cliente ya recibió su "
-            "correo con la contraseña y las invitaciones a Discord y Skool. Tiene 24 "
+            "correo con la contraseña y las invitaciones a Discord y Skool. Tiene 48 "
             "horas para ingresar antes de que el acceso expire automáticamente."
         ),
         color=0xE63946,
@@ -533,7 +533,7 @@ def _build_bot(guild_id: int) -> ATVDiscordBot:
 
                 invite = await discord_channel.create_invite(
                     max_uses=1,
-                    max_age=86400,
+                    max_age=172800,
                     unique=True,
                     reason=f"Invite onboarding {name}",
                 )

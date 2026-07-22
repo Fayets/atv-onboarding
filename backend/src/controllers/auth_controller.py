@@ -10,7 +10,7 @@ from src.services.auth_services import AuthServices, SESSION_COOKIE_NAME
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 service = AuthServices()
 
-SESSION_MAX_AGE = 60 * 60 * 24
+SESSION_MAX_AGE = 60 * 60 * 48
 SESSION_COOKIE_SECURE = config("SESSION_COOKIE_SECURE", default=False, cast=bool)
 
 
