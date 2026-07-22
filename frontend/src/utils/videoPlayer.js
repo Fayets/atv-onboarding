@@ -277,7 +277,7 @@ export function lockPanels() {
 
   document.querySelectorAll('.step-item').forEach((el) => {
     const step = parseInt(el.dataset.step, 10);
-    if (step >= 4) {
+    if (step >= 5) {
       el.classList.add('opacity-30', 'pointer-events-none', 'cursor-not-allowed');
       el.classList.remove('cursor-pointer');
     }
@@ -294,7 +294,7 @@ export function unlockPanels() {
 
   document.querySelectorAll('.step-item').forEach((el) => {
     const step = parseInt(el.dataset.step, 10);
-    if (step >= 4) {
+    if (step >= 5) {
       el.classList.remove('opacity-30', 'pointer-events-none', 'cursor-not-allowed');
       el.classList.add('cursor-pointer');
     }

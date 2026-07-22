@@ -13,15 +13,15 @@ export const STEPS = [
   },
   {
     id: 3,
-    label: 'Video de bienvenida',
-    sublabel: 'Un mensaje para vos',
-    icon: 'M15 10l4.553-2.277A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z',
-  },
-  {
-    id: 4,
     label: 'Tus recursos',
     sublabel: 'Discord y Skool',
     icon: 'M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z',
+  },
+  {
+    id: 4,
+    label: 'Video de bienvenida',
+    sublabel: 'Un mensaje para vos',
+    icon: 'M15 10l4.553-2.277A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z',
   },
   {
     id: 5,

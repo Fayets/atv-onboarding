@@ -35,9 +35,9 @@ export default function OnboardingPage() {
   const goToStep = useCallback(
     (n) => {
       if (n === currentStep) return;
-      if (n >= 4 && !videoCompleted) return;
+      if (n >= 5 && !videoCompleted) return;
       setCurrentStep(n);
-      if (n === 3) {
+      if (n === 4) {
         setTimeout(() => {
           initVimeoPlayer(() => setVideoCompleted(true));
         }, 100);
@@ -47,7 +47,7 @@ export default function OnboardingPage() {
   );
 
   useEffect(() => {
-    if (currentStep !== 3) return undefined;
+    if (currentStep !== 4) return undefined;
 
     const timer = setTimeout(() => {
       initVimeoPlayer(() => setVideoCompleted(true));
@@ -174,7 +174,7 @@ export default function OnboardingPage() {
 
   const currentStepData = STEPS[currentStep - 1];
 
-  const stepLocked = (stepId) => stepId >= 4 && !videoCompleted;
+  const stepLocked = (stepId) => stepId >= 5 && !videoCompleted;
 
   return (
     <Layout fullScreen>
@@ -313,8 +313,70 @@ export default function OnboardingPage() {
             </div>
           </div>
 
-          {/* Panel 3 - Video */}
+          {/* Panel 3 - Recursos */}
           <div data-panel="3" className={`panel absolute inset-0 items-center justify-center panel-padding overflow-y-auto ${currentStep === 3 ? 'active' : ''}`}>
+            <div className="panel-inner flex flex-col">
+              <h1 className="text-[24px] md:text-[30px] font-bold tracking-[-0.03em] text-white mb-[0.6rem] leading-[1.2]">Tus recursos</h1>
+              <p className="text-[15px] text-[rgba(255,255,255,0.45)] mb-9 leading-[1.55] tracking-[-0.01em]">Dos plataformas, una comunidad.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-7">
+                <div className={`glass-card px-[1.35rem] py-6 flex flex-col gap-[11px] ${client?.discord_invite_used ? 'opacity-30 cursor-default' : 'opacity-100'}`}>
+                  <div className="w-11 h-11 rounded-[10px] flex items-center justify-center bg-[rgba(88,101,242,0.15)] border border-[rgba(88,101,242,0.25)]">
+                    <svg viewBox="0 0 24 24" fill="#5865f2" width="20" height="20"><path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03z" /></svg>
+                  </div>
+                  <h3 className="text-[14.5px] font-semibold tracking-[-0.02em] text-white">Discord</h3>
+                  <p className="text-[13px] text-[rgba(255,255,255,0.4)] leading-[1.65] flex-1">Comunidad en tiempo real. Hacé preguntas, compartí avances y conectá con otros clientes.</p>
+                  {!client?.discord_invite_used && client?.discord_invite_url ? (
+                    <button
+                      type="button"
+                      disabled={discordLoading}
+                      onClick={handleJoinDiscord}
+                      className="text-[13px] disabled:cursor-not-allowed cursor-pointer font-medium text-[#e63946] no-underline tracking-[-0.01em] transition-opacity duration-150 hover:opacity-70 bg-transparent border-0 p-0 text-left"
+                    >
+                      Unirme al servidor →
+                    </button>
+                  ) : client?.discord_invite_used ? (
+                    <span className="text-[13px] text-[rgba(255,255,255,0.4)] leading-[1.65] flex-1">
+                      Ya te uniste al servidor ✓
+                    </span>
+                  ) : (
+                    <span className="text-[13px] text-[rgba(255,255,255,0.3)]">Link de Discord no configurado</span>
+                  )}
+                </div>
+                <div className={`glass-card justify-start items-start px-[1.35rem] py-6 flex flex-col gap-[11px] ${client?.skool_used ? 'opacity-30 cursor-default' : 'opacity-100'}`}>
+                  <div className="w-11 h-11 rounded-[10px] flex items-center justify-center bg-[rgba(230,57,70,0.12)] border border-[rgba(230,57,70,0.25)]">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#e63946" strokeWidth="1.75" width="20" height="20">
+                      <path d="M12 14l9-5-9-5-9 5 9 5z" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  <h3 className="text-[14.5px] font-semibold tracking-[-0.02em] text-white">Skool</h3>
+                  <p className="text-[13px] text-[rgba(255,255,255,0.4)] leading-[1.65] flex-1">Accedé a todos los materiales del programa: módulos, recursos descargables y grabaciones.</p>
+                  {!client?.skool_used ? (
+                    <button
+                      id="join-skool-btn"
+                      type="button"
+                      disabled={skoolLoading}
+                      onClick={handleJoinSkool}
+                      className="text-[13px] disabled:cursor-not-allowed cursor-pointer font-medium text-[#e63946] no-underline tracking-[-0.01em] transition-opacity duration-150 hover:opacity-70 bg-transparent border-0 p-0 text-left"
+                    >
+                      {skoolMessage || 'Enviar invitación →'}
+                    </button>
+                  ) : (
+                    <span className="text-[13px] text-[rgba(255,255,255,0.4)] leading-[1.65] flex-1">
+                      Tu invitación <strong>ya ha sido enviada.</strong>
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-[10px] items-stretch mt-7">
+                <button type="button" className="btn-secondary flex items-center rounded-lg px-5 py-[0.8rem] text-[14.5px] font-sans tracking-[-0.01em] cursor-pointer whitespace-nowrap border-0" onClick={() => goToStep(2)}>← Anterior</button>
+                <button type="button" className="btn-primary flex flex-1 items-center justify-center rounded-lg px-6 py-[0.85rem] text-[15px] font-semibold font-sans tracking-[-0.01em] cursor-pointer border-0 text-white" onClick={() => goToStep(4)}>Siguiente</button>
+              </div>
+            </div>
+          </div>
+
+          {/* Panel 4 - Video */}
+          <div data-panel="4" className={`panel absolute inset-0 items-center justify-center panel-padding overflow-y-auto ${currentStep === 4 ? 'active' : ''}`}>
             <div className="panel-inner flex flex-col">
               <h1 className="text-[24px] md:text-[30px] font-bold tracking-[-0.03em] text-white mb-[0.6rem] leading-[1.2]">Video de bienvenida</h1>
               <p className="text-[15px] text-[rgba(255,255,255,0.45)] mb-9 leading-[1.55] tracking-[-0.01em]">Un mensaje personal antes de arrancar.</p>
@@ -385,78 +447,16 @@ export default function OnboardingPage() {
                 </div>
               </div>
               <div className="flex gap-[10px] items-stretch mt-7">
-                <button type="button" className="btn-secondary flex items-center rounded-lg px-5 py-[0.8rem] text-[14.5px] font-sans tracking-[-0.01em] cursor-pointer whitespace-nowrap border-0" onClick={() => goToStep(2)}>← Anterior</button>
+                <button type="button" className="btn-secondary flex items-center rounded-lg px-5 py-[0.8rem] text-[14.5px] font-sans tracking-[-0.01em] cursor-pointer whitespace-nowrap border-0" onClick={() => goToStep(3)}>← Anterior</button>
                 <button
                   type="button"
                   id="btn-siguiente-video"
                   disabled={!videoCompleted}
-                  onClick={() => goToStep(4)}
+                  onClick={() => goToStep(5)}
                   className={`btn-primary cursor-pointer flex flex-1 items-center justify-center rounded-lg px-6 py-[0.85rem] text-[15px] font-semibold font-sans tracking-[-0.01em] border-0 text-white ${!videoCompleted ? 'opacity-30 cursor-not-allowed' : ''}`}
                 >
                   {videoCompleted ? 'Siguiente →' : 'Siguiente — Completá el video primero'}
                 </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Panel 4 - Recursos */}
-          <div data-panel="4" className={`panel absolute inset-0 items-center justify-center panel-padding overflow-y-auto ${currentStep === 4 ? 'active' : ''}`}>
-            <div className="panel-inner flex flex-col">
-              <h1 className="text-[24px] md:text-[30px] font-bold tracking-[-0.03em] text-white mb-[0.6rem] leading-[1.2]">Tus recursos</h1>
-              <p className="text-[15px] text-[rgba(255,255,255,0.45)] mb-9 leading-[1.55] tracking-[-0.01em]">Dos plataformas, una comunidad.</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-7">
-                <div className={`glass-card px-[1.35rem] py-6 flex flex-col gap-[11px] ${client?.discord_invite_used ? 'opacity-30 cursor-default' : 'opacity-100'}`}>
-                  <div className="w-11 h-11 rounded-[10px] flex items-center justify-center bg-[rgba(88,101,242,0.15)] border border-[rgba(88,101,242,0.25)]">
-                    <svg viewBox="0 0 24 24" fill="#5865f2" width="20" height="20"><path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03z" /></svg>
-                  </div>
-                  <h3 className="text-[14.5px] font-semibold tracking-[-0.02em] text-white">Discord</h3>
-                  <p className="text-[13px] text-[rgba(255,255,255,0.4)] leading-[1.65] flex-1">Comunidad en tiempo real. Hacé preguntas, compartí avances y conectá con otros clientes.</p>
-                  {!client?.discord_invite_used && client?.discord_invite_url ? (
-                    <button
-                      type="button"
-                      disabled={discordLoading}
-                      onClick={handleJoinDiscord}
-                      className="text-[13px] disabled:cursor-not-allowed cursor-pointer font-medium text-[#e63946] no-underline tracking-[-0.01em] transition-opacity duration-150 hover:opacity-70 bg-transparent border-0 p-0 text-left"
-                    >
-                      Unirme al servidor →
-                    </button>
-                  ) : client?.discord_invite_used ? (
-                    <span className="text-[13px] text-[rgba(255,255,255,0.4)] leading-[1.65] flex-1">
-                      Ya te uniste al servidor ✓
-                    </span>
-                  ) : (
-                    <span className="text-[13px] text-[rgba(255,255,255,0.3)]">Link de Discord no configurado</span>
-                  )}
-                </div>
-                <div className={`glass-card justify-start items-start px-[1.35rem] py-6 flex flex-col gap-[11px] ${client?.skool_used ? 'opacity-30 cursor-default' : 'opacity-100'}`}>
-                  <div className="w-11 h-11 rounded-[10px] flex items-center justify-center bg-[rgba(230,57,70,0.12)] border border-[rgba(230,57,70,0.25)]">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#e63946" strokeWidth="1.75" width="20" height="20">
-                      <path d="M12 14l9-5-9-5-9 5 9 5z" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                  <h3 className="text-[14.5px] font-semibold tracking-[-0.02em] text-white">Skool</h3>
-                  <p className="text-[13px] text-[rgba(255,255,255,0.4)] leading-[1.65] flex-1">Accedé a todos los materiales del programa: módulos, recursos descargables y grabaciones.</p>
-                  {!client?.skool_used ? (
-                    <button
-                      id="join-skool-btn"
-                      type="button"
-                      disabled={skoolLoading}
-                      onClick={handleJoinSkool}
-                      className="text-[13px] disabled:cursor-not-allowed cursor-pointer font-medium text-[#e63946] no-underline tracking-[-0.01em] transition-opacity duration-150 hover:opacity-70 bg-transparent border-0 p-0 text-left"
-                    >
-                      {skoolMessage || 'Enviar invitación →'}
-                    </button>
-                  ) : (
-                    <span className="text-[13px] text-[rgba(255,255,255,0.4)] leading-[1.65] flex-1">
-                      Tu invitación <strong>ya ha sido enviada.</strong>
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="flex gap-[10px] items-stretch mt-7">
-                <button type="button" className="btn-secondary flex items-center rounded-lg px-5 py-[0.8rem] text-[14.5px] font-sans tracking-[-0.01em] cursor-pointer whitespace-nowrap border-0" onClick={() => goToStep(3)}>← Anterior</button>
-                <button type="button" className="btn-primary flex flex-1 items-center justify-center rounded-lg px-6 py-[0.85rem] text-[15px] font-semibold font-sans tracking-[-0.01em] cursor-pointer border-0 text-white" onClick={() => goToStep(5)}>Siguiente</button>
               </div>
             </div>
           </div>
