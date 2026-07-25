@@ -13,6 +13,17 @@ const ATV_COLORS = {
   white: '#ffffff',
 };
 
+const ROBOTO_FONTS = {
+  Roboto: {
+    normal: 'Roboto-Regular.ttf',
+    bold: 'Roboto-Medium.ttf',
+    italics: 'Roboto-Italic.ttf',
+    bolditalics: 'Roboto-MediumItalic.ttf',
+  },
+};
+
+let pdfMakePromise = null;
+
 function slugifyFilename(value) {
   return (
     String(value || 'cliente')
@@ -33,47 +44,6 @@ function formatSubmittedAt(value) {
     hour: '2-digit',
     minute: '2-digit',
   });
-}
-
-function buildFormMetadataLines(data) {
-  const lines = [
-    `Cliente: ${data?.client_name || '—'}`,
-    `Email: ${data?.client_email || '—'}`,
-    `Plan: ${data?.plan || '—'}`,
-  ];
-
-  const submittedAt = formatSubmittedAt(data?.submitted_at);
-  if (submittedAt) {
-    lines.push(`Enviado: ${submittedAt}`);
-  }
-
-  return lines;
-}
-
-export function buildFormDownloadContent(data) {
-  const responses = data?.form_data || {};
-  const sections = getFormDisplaySections(responses);
-  const lines = [
-    'FORMULARIO DE ONBOARDING — AUMENTA TU VALOR',
-    '',
-    ...buildFormMetadataLines(data),
-    '',
-    '─'.repeat(50),
-    '',
-  ];
-
-  for (const section of sections) {
-    if (section.title) {
-      lines.push(section.title, '');
-    }
-
-    for (const { id, label } of section.questions) {
-      const text = formatFormResponseValue(responses[id]);
-      lines.push(`${id}. ${label}`, text, '');
-    }
-  }
-
-  return lines.join('\n');
 }
 
 async function fetchLogoAsBase64() {
@@ -320,23 +290,40 @@ async function buildFormPdfDefinition(data, { includeLogo = true } = {}) {
 }
 
 async function loadPdfMake() {
-  const [pdfMakeModule, vfsModule] = await Promise.all([
-    import('pdfmake/build/pdfmake'),
-    import('pdfmake/build/vfs_fonts'),
-  ]);
-
-  const pdfMake = pdfMakeModule.default ?? pdfMakeModule;
-  const vfs = vfsModule.default ?? vfsModule?.pdfMake?.vfs ?? vfsModule;
-
-  if (!pdfMake?.createPdf) {
-    throw new Error('No se pudo inicializar el generador de PDF.');
-  }
-  if (!vfs || typeof vfs !== 'object') {
-    throw new Error('No se pudieron cargar las fuentes del PDF.');
+  if (pdfMakePromise) {
+    return pdfMakePromise;
   }
 
-  pdfMake.vfs = vfs;
-  return pdfMake;
+  pdfMakePromise = (async () => {
+    const [pdfMakeModule, vfsModule] = await Promise.all([
+      import('pdfmake/build/pdfmake'),
+      import('pdfmake/build/vfs_fonts'),
+    ]);
+
+    const pdfMake = pdfMakeModule.default ?? pdfMakeModule;
+    const vfs = vfsModule.default ?? vfsModule;
+
+    if (!pdfMake?.createPdf) {
+      throw new Error('No se pudo inicializar el generador de PDF.');
+    }
+    if (!vfs || typeof vfs !== 'object' || !vfs['Roboto-Regular.ttf']) {
+      throw new Error('No se pudieron cargar las fuentes del PDF.');
+    }
+
+    if (typeof pdfMake.addVirtualFileSystem === 'function') {
+      pdfMake.addVirtualFileSystem(vfs);
+    } else {
+      pdfMake.vfs = vfs;
+    }
+
+    if (typeof pdfMake.addFonts === 'function') {
+      pdfMake.addFonts(ROBOTO_FONTS);
+    }
+
+    return pdfMake;
+  })();
+
+  return pdfMakePromise;
 }
 
 function triggerBrowserDownload(blob, filename) {
@@ -355,13 +342,7 @@ async function createPdfBlob(docDefinition) {
   return pdfMake.createPdf(docDefinition).getBlob();
 }
 
-function downloadTxtFile(data) {
-  const content = buildFormDownloadContent(data);
-  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-  triggerBrowserDownload(blob, `formulario-${slugifyFilename(data?.client_name)}.txt`);
-}
-
-async function downloadPdfFile(data) {
+export async function downloadFormFile(data) {
   const filename = `formulario-${slugifyFilename(data?.client_name)}.pdf`;
 
   try {
@@ -377,18 +358,8 @@ async function downloadPdfFile(data) {
     const docDefinition = await buildFormPdfDefinition(data, { includeLogo: false });
     const blob = await createPdfBlob(docDefinition);
     triggerBrowserDownload(blob, filename);
-    return;
   } catch (error) {
     console.error('Error al generar PDF:', error);
-    throw new Error('No se pudo generar el PDF. Probá descargar en TXT.');
+    throw new Error('No se pudo generar el PDF.');
   }
-}
-
-export async function downloadFormFile(data, format = 'txt') {
-  if (format === 'pdf') {
-    await downloadPdfFile(data);
-    return;
-  }
-
-  downloadTxtFile(data);
 }
