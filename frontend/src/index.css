@@ -363,6 +363,16 @@ body {
   transform: none;
 }
 
+.dashboard-table-action-btn.btn-danger {
+  border: 1px solid #e63946;
+  color: #e63946;
+  background: transparent;
+}
+
+.dashboard-table-action-btn.btn-danger:hover:not(:disabled) {
+  background: rgba(230, 57, 70, 0.12);
+}
+
 body::before,
 body::after {
   content: '';

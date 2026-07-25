@@ -105,3 +105,11 @@ export async function updateSessionEstado(sessionId, estado) {
   });
   return parseResponse(res);
 }
+
+export async function deleteSession(sessionId) {
+  const res = await fetch(`/api/admin/sessions/${sessionId}`, {
+    ...defaultOptions,
+    method: 'DELETE',
+  });
+  return parseResponse(res);
+}

@@ -199,3 +199,19 @@ def update_estado(
             status_code=500,
             detail="Error inesperado al actualizar el estado.",
         )
+
+
+@router.delete(
+    "/sessions/{session_id}",
+    response_model=schemas.DeleteSessionResponse,
+)
+def delete_session(session_id: UUID, _: str = Depends(verify_ecosystem_session)):
+    try:
+        return service.delete_session(session_id)
+    except HTTPException as e:
+        raise e
+    except Exception:
+        raise HTTPException(
+            status_code=500,
+            detail="Error inesperado al eliminar la sesión.",
+        )

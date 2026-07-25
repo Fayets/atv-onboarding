@@ -4,6 +4,7 @@ import Layout, { LOGO_URL } from '../components/Layout';
 import FormResponsesModal from '../components/FormResponsesModal';
 import {
   ApiError,
+  deleteSession,
   getDashboard,
   getSessionForm,
   markCallCompleted,
@@ -230,6 +231,28 @@ export default function DashboardPage() {
     }
   }
 
+  async function handleDeleteSession(session) {
+    const clientLabel = session.client_name || session.client_email || 'este cliente';
+    const confirmed = window.confirm(
+      `¿Eliminar a ${clientLabel}? Se borrarán sus datos de onboarding y no se puede deshacer.`,
+    );
+    if (!confirmed) return;
+
+    setActionLoadingId(`${session.id}-delete`);
+    setError('');
+    try {
+      await deleteSession(session.id);
+      if (formModalSession?.id === session.id) {
+        closeFormModal();
+      }
+      await loadDashboard();
+    } catch (err) {
+      setError(err.message || 'No se pudo eliminar el cliente.');
+    } finally {
+      setActionLoadingId(null);
+    }
+  }
+
   function isEstadoOptionDisabled(session, estado) {
     if (estado === 'enviado') return session.form_submitted;
     if (estado === 'formulario_completo') return !session.form_submitted;
@@ -450,6 +473,7 @@ export default function DashboardPage() {
                         const canComplete = Boolean(session.call_scheduled_at) && !session.call_completed_at;
                         const scheduling = actionLoadingId === `${session.id}-scheduled`;
                         const completing = actionLoadingId === `${session.id}-completed`;
+                        const deleting = actionLoadingId === `${session.id}-delete`;
                         const hasForm = Boolean(session.form_submitted);
 
                         return (
@@ -507,7 +531,7 @@ export default function DashboardPage() {
                               </button>
                             </td>
                             <td className="py-2.5 px-3">
-                              <div className="flex flex-row gap-1.5 min-w-[220px]">
+                              <div className="flex flex-row flex-wrap gap-1.5 min-w-[280px]">
                                 <button
                                   type="button"
                                   disabled={!canSchedule || scheduling}
@@ -523,6 +547,15 @@ export default function DashboardPage() {
                                   className="dashboard-table-action-btn btn-primary border-0 text-white"
                                 >
                                   {completing ? '...' : 'Call realizada'}
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={deleting}
+                                  onClick={() => handleDeleteSession(session)}
+                                  className="dashboard-table-action-btn btn-danger"
+                                  title="Eliminar cliente"
+                                >
+                                  {deleting ? '...' : 'Eliminar'}
                                 </button>
                               </div>
                             </td>

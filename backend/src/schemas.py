@@ -160,6 +160,11 @@ class SessionFormResponse(BaseModel):
     form_data: FormSubmitRequest
 
 
+class DeleteSessionResponse(BaseModel):
+    ok: bool = True
+    session_id: str
+
+
 class MetricsResponse(BaseModel):
     total_sessions: int
     with_form: int

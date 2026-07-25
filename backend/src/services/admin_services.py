@@ -382,3 +382,15 @@ class AdminServices:
             call_scheduled_at=call_scheduled_at,
             call_completed_at=call_completed_at,
         )
+
+    def delete_session(self, session_id: UUID) -> schemas.DeleteSessionResponse:
+        with db_session:
+            session = OnboardingSession.get(id=session_id)
+            if not session:
+                raise HTTPException(status_code=404, detail="Sesión no encontrada.")
+
+            for form in list(session.forms):
+                form.delete()
+            session.delete()
+
+        return schemas.DeleteSessionResponse(session_id=str(session_id))
