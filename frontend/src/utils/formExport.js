@@ -199,10 +199,10 @@ function buildPdfQuestionBlock(id, label, answer) {
   };
 }
 
-async function buildFormPdfDefinition(data) {
+async function buildFormPdfDefinition(data, { includeLogo = true } = {}) {
   const responses = data?.form_data || {};
   const sections = getFormDisplaySections(responses);
-  const logoBase64 = await fetchLogoAsBase64();
+  const logoBase64 = includeLogo ? await fetchLogoAsBase64() : null;
 
   const content = [
     buildPdfHeader(logoBase64),
@@ -319,30 +319,69 @@ async function buildFormPdfDefinition(data) {
   };
 }
 
-function downloadTxtFile(data) {
-  const content = buildFormDownloadContent(data);
-  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+async function loadPdfMake() {
+  const [pdfMakeModule, vfsModule] = await Promise.all([
+    import('pdfmake/build/pdfmake'),
+    import('pdfmake/build/vfs_fonts'),
+  ]);
+
+  const pdfMake = pdfMakeModule.default ?? pdfMakeModule;
+  const vfs = vfsModule.default ?? vfsModule?.pdfMake?.vfs ?? vfsModule;
+
+  if (!pdfMake?.createPdf) {
+    throw new Error('No se pudo inicializar el generador de PDF.');
+  }
+  if (!vfs || typeof vfs !== 'object') {
+    throw new Error('No se pudieron cargar las fuentes del PDF.');
+  }
+
+  pdfMake.vfs = vfs;
+  return pdfMake;
+}
+
+function triggerBrowserDownload(blob, filename) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `formulario-${slugifyFilename(data?.client_name)}.txt`;
+  link.download = filename;
   document.body.appendChild(link);
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
 }
 
+async function createPdfBlob(docDefinition) {
+  const pdfMake = await loadPdfMake();
+  return pdfMake.createPdf(docDefinition).getBlob();
+}
+
+function downloadTxtFile(data) {
+  const content = buildFormDownloadContent(data);
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  triggerBrowserDownload(blob, `formulario-${slugifyFilename(data?.client_name)}.txt`);
+}
+
 async function downloadPdfFile(data) {
-  const [{ default: pdfMake }, { default: vfs }] = await Promise.all([
-    import('pdfmake/build/pdfmake'),
-    import('pdfmake/build/vfs_fonts'),
-  ]);
-
-  pdfMake.vfs = vfs;
-
   const filename = `formulario-${slugifyFilename(data?.client_name)}.pdf`;
-  const docDefinition = await buildFormPdfDefinition(data);
-  pdfMake.createPdf(docDefinition).download(filename);
+
+  try {
+    const docDefinition = await buildFormPdfDefinition(data, { includeLogo: true });
+    const blob = await createPdfBlob(docDefinition);
+    triggerBrowserDownload(blob, filename);
+    return;
+  } catch (error) {
+    console.error('Error al generar PDF con logo:', error);
+  }
+
+  try {
+    const docDefinition = await buildFormPdfDefinition(data, { includeLogo: false });
+    const blob = await createPdfBlob(docDefinition);
+    triggerBrowserDownload(blob, filename);
+    return;
+  } catch (error) {
+    console.error('Error al generar PDF:', error);
+    throw new Error('No se pudo generar el PDF. Probá descargar en TXT.');
+  }
 }
 
 export async function downloadFormFile(data, format = 'txt') {

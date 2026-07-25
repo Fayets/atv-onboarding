@@ -68,10 +68,14 @@ function sortFormKeys(keys) {
 
 export default function FormResponsesModal({ open, theme = 'dark', sessionMeta, formData, loading, error, onClose }) {
   const [showFormatPicker, setShowFormatPicker] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState('');
 
   useEffect(() => {
     if (!open) {
       setShowFormatPicker(false);
+      setDownloading(false);
+      setDownloadError('');
     }
   }, [open]);
 
@@ -81,9 +85,19 @@ export default function FormResponsesModal({ open, theme = 'dark', sessionMeta, 
   const responseKeys = sortFormKeys(Object.keys(responses));
 
   const handleDownload = async (format) => {
-    if (!formData) return;
-    await downloadFormFile(formData, format);
-    setShowFormatPicker(false);
+    if (!formData || downloading) return;
+
+    setDownloadError('');
+    setDownloading(true);
+
+    try {
+      await downloadFormFile(formData, format);
+      setShowFormatPicker(false);
+    } catch (err) {
+      setDownloadError(err.message || 'No se pudo descargar el archivo.');
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
@@ -150,6 +164,9 @@ export default function FormResponsesModal({ open, theme = 'dark', sessionMeta, 
           </div>
 
           <div className="shrink-0 pt-6 flex flex-col gap-2">
+            {downloadError && (
+              <p className="text-[13px] text-[#e63946] tracking-[-0.01em] text-center">{downloadError}</p>
+            )}
             <button
               type="button"
               onClick={onClose}
@@ -172,15 +189,15 @@ export default function FormResponsesModal({ open, theme = 'dark', sessionMeta, 
                   <button
                     type="button"
                     onClick={() => handleDownload('pdf')}
-                    disabled={loading || !formData}
+                    disabled={loading || !formData || downloading}
                     className="w-full rounded-lg px-4 py-2.5 text-[13px] font-semibold font-sans tracking-[-0.01em] cursor-pointer border-0 text-white btn-primary disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    PDF
+                    {downloading ? 'Generando PDF...' : 'PDF'}
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDownload('txt')}
-                    disabled={loading || !formData}
+                    disabled={loading || !formData || downloading}
                     className={`w-full rounded-lg px-4 py-2.5 text-[13px] font-semibold font-sans tracking-[-0.01em] cursor-pointer border disabled:opacity-40 disabled:cursor-not-allowed ${
                       theme === 'light' ? 'dashboard-btn-secondary' : 'btn-secondary'
                     }`}
@@ -191,6 +208,7 @@ export default function FormResponsesModal({ open, theme = 'dark', sessionMeta, 
                 <button
                   type="button"
                   onClick={() => setShowFormatPicker(false)}
+                  disabled={downloading}
                   className={`w-full rounded-lg px-4 py-2 text-[12px] font-sans tracking-[-0.01em] cursor-pointer border-0 bg-transparent ${
                     theme === 'light' ? 'text-[rgba(17,24,39,0.45)]' : 'text-[rgba(255,255,255,0.45)]'
                   }`}
@@ -202,7 +220,7 @@ export default function FormResponsesModal({ open, theme = 'dark', sessionMeta, 
               <button
                 type="button"
                 onClick={() => setShowFormatPicker(true)}
-                disabled={loading || !formData}
+                disabled={loading || !formData || downloading}
                 className="w-full rounded-lg px-4 py-2.5 text-[13px] font-semibold font-sans tracking-[-0.01em] cursor-pointer border-0 text-white btn-primary disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Descargar formulario
