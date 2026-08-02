@@ -81,6 +81,7 @@ export default function FormResponsesModal({ open, theme = 'dark', sessionMeta, 
 
   const responses = formData?.form_data || {};
   const responseKeys = sortFormKeys(Object.keys(responses));
+  const isLight = theme === 'light';
 
   const handleDownload = async () => {
     if (!formData || downloading) return;
@@ -99,7 +100,7 @@ export default function FormResponsesModal({ open, theme = 'dark', sessionMeta, 
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      className="atv-modal-backdrop"
       role="dialog"
       aria-modal="true"
       aria-labelledby="form-responses-title"
@@ -107,27 +108,25 @@ export default function FormResponsesModal({ open, theme = 'dark', sessionMeta, 
     >
       <button
         type="button"
-        className="absolute inset-0 bg-black/75 border-0 cursor-default"
+        className="atv-modal-overlay"
         onClick={onClose}
         aria-label="Cerrar"
       />
       <div
-        className={`relative z-10 w-full max-w-2xl max-h-[85dvh] flex flex-col overflow-hidden rounded-[18px] border ${
-          theme === 'light'
-            ? 'bg-white border-[rgba(17,24,39,0.08)] shadow-xl'
-            : 'shell-card'
-        }`}
-        style={{ animation: 'panelIn 0.25s ease' }}
+        className={`atv-modal-panel max-w-2xl ${isLight ? 'bg-white border-[rgba(17,24,39,0.08)]' : ''}`}
       >
-        <div className="relative z-[1] flex flex-col min-h-0 p-6 sm:p-8">
-          <div className="shrink-0 mb-6">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#e63946] mb-2">
+        <div className="atv-modal-panel__inner">
+          <div className="shrink-0 mb-5">
+            <p className={`atv-modal-kicker ${isLight ? 'text-[rgba(17,24,39,0.45)]' : ''}`}>
               Respuestas del onboarding
             </p>
-            <h2 id="form-responses-title" className={`text-[1.35rem] font-semibold tracking-[-0.02em] mb-1 ${theme === 'light' ? 'text-[#111827]' : 'text-white'}`}>
+            <h2
+              id="form-responses-title"
+              className={`atv-modal-title ${isLight ? 'text-[#111827]' : ''}`}
+            >
               {sessionMeta?.client_name || formData?.client_name || 'Cliente'}
             </h2>
-            <p className={`text-[13px] tracking-[-0.01em] ${theme === 'light' ? 'text-[rgba(17,24,39,0.55)]' : 'text-[rgba(255,255,255,0.45)]'}`}>
+            <p className={`atv-modal-meta ${isLight ? 'text-[rgba(17,24,39,0.55)]' : ''}`}>
               {sessionMeta?.client_email || formData?.client_email || '—'}
               {' · '}
               {sessionMeta?.plan || formData?.plan || '—'}
@@ -136,24 +135,20 @@ export default function FormResponsesModal({ open, theme = 'dark', sessionMeta, 
 
           <div className="flex-1 min-h-0 overflow-y-auto pr-1 flex flex-col gap-3">
             {loading && (
-              <p className="text-[14px] text-[rgba(255,255,255,0.45)] tracking-[-0.01em]">Cargando respuestas...</p>
+              <p className="text-[14px] text-[rgba(255,255,255,0.45)]">Cargando respuestas...</p>
             )}
             {error && !loading && (
-              <p className="text-[13px] text-[#e63946] tracking-[-0.01em]">{error}</p>
+              <p className="text-[13px] text-[#e63946]">{error}</p>
             )}
             {!loading && !error && responseKeys.map((key) => (
               <div
                 key={key}
-                className={`rounded-lg border px-4 py-3 ${
-                  theme === 'light'
-                    ? 'border-[rgba(17,24,39,0.08)] bg-[rgba(17,24,39,0.02)]'
-                    : 'border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)]'
-                }`}
+                className={`atv-modal-block ${isLight ? 'border-[rgba(17,24,39,0.08)] bg-[rgba(17,24,39,0.02)]' : ''}`}
               >
-                <p className={`text-[11px] uppercase tracking-[0.08em] mb-1.5 ${theme === 'light' ? 'text-[rgba(17,24,39,0.45)]' : 'text-[rgba(255,255,255,0.4)]'}`}>
+                <p className={`atv-modal-block__label ${isLight ? 'text-[rgba(17,24,39,0.45)]' : ''}`}>
                   {getFieldLabel(key)}
                 </p>
-                <p className={`text-[14px] leading-relaxed whitespace-pre-wrap tracking-[-0.01em] ${theme === 'light' ? 'text-[rgba(17,24,39,0.88)]' : 'text-[rgba(255,255,255,0.85)]'}`}>
+                <p className={`atv-modal-block__value ${isLight ? 'text-[rgba(17,24,39,0.88)]' : ''}`}>
                   {formatValue(responses[key])}
                 </p>
               </div>
@@ -162,14 +157,12 @@ export default function FormResponsesModal({ open, theme = 'dark', sessionMeta, 
 
           <div className="shrink-0 pt-6 flex flex-col gap-2">
             {downloadError && (
-              <p className="text-[13px] text-[#e63946] tracking-[-0.01em] text-center">{downloadError}</p>
+              <p className="text-[13px] text-[#e63946] text-center">{downloadError}</p>
             )}
             <button
               type="button"
               onClick={onClose}
-              className={`w-full rounded-lg px-4 py-2.5 text-[13px] font-sans tracking-[-0.01em] cursor-pointer border ${
-                theme === 'light' ? 'dashboard-btn-secondary' : 'btn-secondary'
-              }`}
+              className="btn-secondary w-full py-2.5 text-[13px]"
             >
               Cerrar
             </button>
@@ -177,7 +170,7 @@ export default function FormResponsesModal({ open, theme = 'dark', sessionMeta, 
               type="button"
               onClick={handleDownload}
               disabled={loading || !formData || downloading}
-              className="w-full rounded-lg px-4 py-2.5 text-[13px] font-semibold font-sans tracking-[-0.01em] cursor-pointer border-0 text-white btn-primary disabled:opacity-40 disabled:cursor-not-allowed"
+              className="btn-primary w-full py-2.5 text-[13px] disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {downloading ? 'Generando PDF...' : 'Descargar PDF'}
             </button>

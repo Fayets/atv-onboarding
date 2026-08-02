@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import Layout from '../components/Layout';
+import Layout, { ADMIN_LOGO_URL } from '../components/Layout';
 import { ApiError, getMetrics } from '../api/client';
 
 const CHOICE_QUESTION_ORDER = [
@@ -45,13 +45,9 @@ function sortMetricEntries(entries) {
 
 function StatCard({ label, value, loading }) {
   return (
-    <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-5 py-4 text-center">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[rgba(255,255,255,0.45)] mb-1.5">
-        {label}
-      </p>
-      <p className="text-[28px] font-bold tracking-[-0.03em] text-white tabular-nums">
-        {loading ? '—' : value}
-      </p>
+    <div className="metrics-stat-card">
+      <p className="metrics-stat-card__label">{label}</p>
+      <p className="metrics-stat-card__value">{loading ? '—' : value}</p>
     </div>
   );
 }
@@ -67,11 +63,8 @@ function MetricBar({ label, count, total }) {
           {count} · {percent}%
         </span>
       </div>
-      <div className="h-2 rounded-full overflow-hidden bg-[rgba(255,255,255,0.06)]">
-        <div
-          className="h-full rounded-full bg-[#e63946] transition-all duration-300"
-          style={{ width: `${percent}%` }}
-        />
+      <div className="metrics-bar-track">
+        <div className="metrics-bar-fill" style={{ width: `${percent}%` }} />
       </div>
     </div>
   );
@@ -81,12 +74,10 @@ function QuestionCard({ title, entries, withForm }) {
   const totalResponses = entries.reduce((sum, [, count]) => sum + count, 0);
 
   return (
-    <article className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-5 sm:p-6 flex flex-col gap-5">
+    <article className="metrics-question-card">
       <div>
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#e63946] leading-relaxed">
-          {title}
-        </h2>
-        <p className="mt-2 text-[12px] text-[rgba(255,255,255,0.45)]">
+        <h2 className="metrics-question-card__title">{title}</h2>
+        <p className="metrics-question-card__meta">
           {totalResponses} respuesta{totalResponses === 1 ? '' : 's'}
         </p>
       </div>
@@ -161,63 +152,72 @@ export default function MetricsPage() {
 
   return (
     <Layout title="Métricas — ATV" fullScreen>
-      <div className="dashboard-page min-h-0 flex-1 w-full bg-[#0a0a0a] text-white overflow-hidden flex flex-col" data-theme="dark">
-        <div className="relative z-[1] flex flex-col flex-1 min-h-0 px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 tracking-[-0.01em]">
-          <div className="relative mb-8 shrink-0">
-            <div className="absolute top-0 left-0 z-10">
-              <button
-                type="button"
-                onClick={() => navigate('/dashboard')}
-                className="dashboard-btn-secondary rounded-lg px-4 py-2.5 text-[14px] cursor-pointer"
-              >
-                ← Dashboard
-              </button>
-            </div>
-            <div className="absolute top-0 right-0 z-10">
-              <button
-                type="button"
-                onClick={loadMetrics}
-                className="dashboard-btn-secondary rounded-lg px-4 py-2.5 text-[14px] cursor-pointer"
-              >
-                Actualizar
-              </button>
-            </div>
+      <div className="atv-module-page" data-theme="dark">
+        <div className="atv-page__glow atv-page__glow--module" aria-hidden="true" />
 
-            <div className="pt-12 sm:pt-14 text-center max-w-3xl mx-auto">
-              <h1 className="text-[24px] md:text-[28px] font-bold tracking-[-0.03em] text-white mb-6">
-                Métricas de onboarding
+        <header className="atv-module-header">
+          <img
+            src={ADMIN_LOGO_URL}
+            alt="Aumenta Tu Valor"
+            className="atv-module-logo"
+            width={112}
+            height={36}
+          />
+          <div className="atv-module-header__actions">
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard')}
+              className="btn-secondary atv-module-action-btn"
+            >
+              ← Dashboard
+            </button>
+            <button
+              type="button"
+              onClick={loadMetrics}
+              className="btn-secondary atv-module-action-btn"
+            >
+              Actualizar
+            </button>
+          </div>
+        </header>
+
+        <main className="atv-module-main">
+          <div className="atv-glass-panel">
+            <div className="atv-glass-panel__intro">
+              <h1 className="atv-module-title">
+                Métricas de
+                <strong>onboarding</strong>
               </h1>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl mx-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl mt-4">
                 <StatCard label="Formularios completados" value={withForm} loading={loading} />
                 <StatCard label="Sesiones totales" value={totalSessions} loading={loading} />
               </div>
             </div>
-          </div>
 
-          {error && (
-            <p className="mb-4 text-[13px] text-[#e63946] shrink-0 text-center">{error}</p>
-          )}
-
-          <div className="flex-1 min-h-0 overflow-y-auto pb-4">
-            {loading ? (
-              <p className="text-[14px] text-[rgba(255,255,255,0.45)] text-center py-8">
-                Cargando métricas...
-              </p>
-            ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 max-w-6xl mx-auto w-full">
-                {sections.map((section) => (
-                  <QuestionCard
-                    key={section.key}
-                    title={section.title}
-                    entries={section.entries}
-                    withForm={withForm}
-                  />
-                ))}
-              </div>
+            {error && (
+              <p className="mb-4 text-[13px] text-[#e63946] shrink-0">{error}</p>
             )}
+
+            <div className="flex-1 min-h-0 overflow-y-auto pb-1">
+              {loading ? (
+                <p className="text-[14px] text-[rgba(255,255,255,0.45)] py-4">
+                  Cargando métricas...
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 w-full">
+                  {sections.map((section) => (
+                    <QuestionCard
+                      key={section.key}
+                      title={section.title}
+                      entries={section.entries}
+                      withForm={withForm}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        </main>
       </div>
     </Layout>
   );

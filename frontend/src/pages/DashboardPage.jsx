@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Layout, { LOGO_URL } from '../components/Layout';
+import Layout, { ADMIN_LOGO_URL } from '../components/Layout';
 import FormResponsesModal from '../components/FormResponsesModal';
 import {
   ApiError,
@@ -292,23 +292,26 @@ export default function DashboardPage() {
   if (!loading && unauthorized) {
     return (
       <Layout title="Dashboard — ATV" fullScreen>
-        <div className="dashboard-page" data-theme="dark">
-          <div className="shell-card shell-fullscreen dashboard-shell flex flex-col w-full min-h-0 flex-1 overflow-hidden">
-            <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 text-center">
-              <img
-                src={LOGO_URL}
-                alt="Aumenta Tu Valor"
-                width="160"
-                className="dashboard-logo mb-8 max-w-[160px] h-auto"
-              />
-              <h1 className="dashboard-title text-[28px] md:text-[36px] font-bold tracking-[-0.03em] mb-3">
-                Acceso no autorizado
+        <div className="atv-module-page" data-theme="dark">
+          <div className="atv-page__glow atv-page__glow--module" aria-hidden="true" />
+          <header className="atv-module-header">
+            <img
+              src={ADMIN_LOGO_URL}
+              alt="Aumenta Tu Valor"
+              className="atv-module-logo"
+              width={112}
+              height={36}
+            />
+          </header>
+          <main className="atv-module-main">
+            <div className="atv-glass-panel atv-glass-panel--center">
+              <h1 className="atv-module-title">
+                Acceso no
+                <strong>autorizado</strong>
               </h1>
-              <p className="dashboard-muted text-[15px] md:text-[16px] max-w-sm leading-relaxed">
-                Ingresá desde ATV Ecosystem
-              </p>
+              <p className="atv-module-lead">Ingresá desde ATV Ecosystem</p>
             </div>
-          </div>
+          </main>
         </div>
       </Layout>
     );
@@ -316,53 +319,49 @@ export default function DashboardPage() {
 
   return (
     <Layout title="Dashboard — ATV" fullScreen>
-      <div className="dashboard-page" data-theme={theme}>
-        <div className="shell-card shell-fullscreen dashboard-shell flex flex-col w-full min-h-0 flex-1 overflow-hidden">
-          <div className="relative z-[1] flex flex-col flex-1 min-h-0 p-5 sm:p-6 md:p-8 tracking-[-0.01em]">
-            <div className="relative mb-6 shrink-0">
-              <div className="absolute top-0 right-0 z-10 flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={toggleTheme}
-                  className="dashboard-theme-btn w-10 h-10 rounded-lg flex items-center justify-center cursor-pointer transition-colors"
-                  aria-label={theme === 'dark' ? 'Activar modo claro' : 'Activar modo oscuro'}
-                  title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
-                >
-                  {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigate('/metrics')}
-                  className="dashboard-btn-secondary rounded-lg px-4 py-2.5 text-[14px] cursor-pointer"
-                >
-                  Métricas
-                </button>
-                <button
-                  type="button"
-                  onClick={loadDashboard}
-                  className="dashboard-btn-secondary rounded-lg px-4 py-2.5 text-[14px] cursor-pointer"
-                >
-                  Actualizar
-                </button>
-              </div>
-              <div className="flex justify-center pt-1 pb-5">
-                <img
-                  src={LOGO_URL}
-                  alt="Aumenta Tu Valor"
-                  width="140"
-                  className={`dashboard-logo ${theme === 'light' ? 'dashboard-logo--light' : ''}`}
-                />
-              </div>
-              <div className="text-center">
-                <h1 className="dashboard-title text-[24px] md:text-[28px] font-bold tracking-[-0.03em] mb-2">
-                  Dashboard de onboarding
-                </h1>
-                <p className="dashboard-muted text-[14px]">
-                  Seguimiento del equipo sobre el avance de cada cliente.
-                </p>
-              </div>
-            </div>
+      <div className="atv-module-page dashboard-page" data-theme={theme}>
+        <div className="atv-page__glow atv-page__glow--module" aria-hidden="true" />
 
+        <header className="atv-module-header">
+          <div className="atv-module-brand">
+            <img
+              src={ADMIN_LOGO_URL}
+              alt="Aumenta Tu Valor"
+              className={`atv-module-logo ${theme === 'light' ? 'dashboard-logo--light' : ''}`}
+              width={96}
+              height={32}
+            />
+            <h1 className="atv-module-header-title">Dashboard de onboarding</h1>
+          </div>
+          <div className="atv-module-header__actions">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="btn-secondary atv-module-action-btn atv-module-action-btn--icon dashboard-theme-btn"
+              aria-label={theme === 'dark' ? 'Activar modo claro' : 'Activar modo oscuro'}
+              title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+            >
+              {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/metrics')}
+              className="btn-secondary atv-module-action-btn dashboard-btn-secondary"
+            >
+              Métricas
+            </button>
+            <button
+              type="button"
+              onClick={loadDashboard}
+              className="btn-secondary atv-module-action-btn dashboard-btn-secondary"
+            >
+              Actualizar
+            </button>
+          </div>
+        </header>
+
+        <main className="atv-module-main">
+          <div className="atv-glass-panel">
             <div className="shrink-0 mb-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
               <input
                 type="search"
@@ -398,7 +397,10 @@ export default function DashboardPage() {
                 onClick={() => setAlertsOnly((prev) => !prev)}
                 className={`dashboard-toggle px-4 py-2.5 text-[13px] cursor-pointer ${alertsOnly ? 'active' : ''}`}
               >
-                Solo alertas 🔴
+                <span className="inline-flex items-center gap-2">
+                  {alertsOnly ? <span className="atv-alert-dot" aria-hidden="true" /> : null}
+                  Solo alertas
+                </span>
               </button>
             </div>
 
@@ -514,7 +516,9 @@ export default function DashboardPage() {
                             </td>
                             <td className="py-2.5 px-3 text-[13px] dashboard-text-strong font-mono-num min-w-[72px] whitespace-nowrap">
                               <span className="inline-flex items-center gap-1.5">
-                                {session.alerta && <span aria-hidden="true">🔴</span>}
+                                {session.alerta && (
+                                  <span className="atv-alert-dot" aria-label="Alerta activa" />
+                                )}
                                 {session.dias_en_estado}
                               </span>
                             </td>
@@ -536,7 +540,7 @@ export default function DashboardPage() {
                                   type="button"
                                   disabled={!canSchedule || scheduling}
                                   onClick={() => handleMarkScheduled(session.id)}
-                                  className="dashboard-table-action-btn dashboard-btn-secondary"
+                                  className="dashboard-table-action-btn btn-secondary"
                                 >
                                   {scheduling ? '...' : 'Call agendada'}
                                 </button>
@@ -544,7 +548,7 @@ export default function DashboardPage() {
                                   type="button"
                                   disabled={!canComplete || completing}
                                   onClick={() => handleMarkCompleted(session.id)}
-                                  className="dashboard-table-action-btn btn-primary border-0 text-white"
+                                  className="dashboard-table-action-btn btn-primary"
                                 >
                                   {completing ? '...' : 'Call realizada'}
                                 </button>
@@ -568,7 +572,7 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
-        </div>
+        </main>
 
         <FormResponsesModal
           open={formModalOpen}

@@ -1,5 +1,6 @@
-const LOGO_URL =
-  'https://kjybftumiysvemmvrvde.supabase.co/storage/v1/object/public/content/logowhite.png';
+const LOGO_URL = '/logowhite.png';
+
+export const ADMIN_LOGO_URL = '/AumentaTuValorLogo.png';
 
 export default function Layout({ title = 'ATV — Onboarding', fullScreen = false, children }) {
   return (

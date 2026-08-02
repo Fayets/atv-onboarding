@@ -13,17 +13,36 @@
   --font-sans: 'Inter', sans-serif;
 }
 
+:root {
+  --atv-accent: #e63946;
+  --atv-text: #ffffff;
+  --atv-muted: rgba(255, 255, 255, 0.45);
+  --atv-border-soft: rgba(255, 255, 255, 0.08);
+  --atv-font-sans:
+    'Inter',
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+}
+
 html,
 body,
 #root {
   min-height: 100vh;
+  min-height: 100dvh;
   height: 100%;
-  background-color: #000;
+  margin: 0;
+  background-color: #0a0505;
 }
 
 body {
-  color: #fff;
+  font-family: var(--atv-font-sans);
+  color: var(--atv-text);
   letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .font-mono-num {
@@ -46,7 +65,7 @@ body {
 .dashboard-input:focus,
 .dashboard-select:focus {
   outline: none;
-  border-color: rgba(230, 57, 70, 0.45);
+  border-color: rgba(255, 255, 255, 0.28);
   background-color: rgba(255, 255, 255, 0.05);
 }
 
@@ -68,8 +87,8 @@ body {
 }
 
 .dashboard-toggle.active {
-  background: rgba(230, 57, 70, 0.12);
-  border-color: rgba(230, 57, 70, 0.35);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.18);
   color: #fff;
 }
 
@@ -94,7 +113,7 @@ body {
 }
 
 .dashboard-sort-btn.active {
-  color: #e63946;
+  color: rgba(255, 255, 255, 0.88);
 }
 
 .dashboard-page {
@@ -104,11 +123,11 @@ body {
   display: flex;
   flex-direction: column;
   color: var(--dash-fg);
-  background: var(--dash-page-bg);
+  background: transparent;
 }
 
 .dashboard-page[data-theme='dark'] {
-  --dash-page-bg: #0a0a0a;
+  --dash-page-bg: transparent;
   --dash-fg: #fff;
   --dash-title: #fff;
   --dash-muted: rgba(255, 255, 255, 0.45);
@@ -142,8 +161,48 @@ body {
   --dash-btn-secondary-fg: rgba(255, 255, 255, 0.7);
 }
 
+.atv-module-page[data-theme='light'] {
+  background-color: #f5f5f7;
+  background-image: radial-gradient(
+    ellipse 95% 75% at 50% 38%,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(245, 245, 247, 0.98) 48%,
+    #ebebef 100%
+  );
+}
+
+.atv-module-page[data-theme='light']::before {
+  background: radial-gradient(
+    ellipse 115% 95% at 50% 45%,
+    transparent 35%,
+    rgba(0, 0, 0, 0.06) 100%
+  );
+}
+
+.atv-module-page[data-theme='light'] .atv-module-title,
+.atv-module-page[data-theme='light'] .atv-module-title strong,
+.atv-module-page[data-theme='light'] .atv-module-header-title {
+  color: #111827;
+}
+
+.atv-module-page[data-theme='light'] .atv-module-lead {
+  color: rgba(17, 24, 39, 0.55);
+}
+
+.atv-module-page[data-theme='light'] .atv-glass-panel {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(17, 24, 39, 0.08);
+  box-shadow:
+    0 12px 40px rgba(17, 24, 39, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.atv-module-page[data-theme='light'] .atv-glass-panel__intro {
+  border-bottom-color: rgba(17, 24, 39, 0.08);
+}
+
 .dashboard-page[data-theme='light'] {
-  --dash-page-bg: #fafafa;
+  --dash-page-bg: transparent;
   --dash-fg: #111827;
   --dash-title: #111827;
   --dash-muted: rgba(17, 24, 39, 0.55);
@@ -177,12 +236,6 @@ body {
   --dash-btn-secondary-fg: rgba(17, 24, 39, 0.78);
 }
 
-.dashboard-page .dashboard-shell {
-  background: var(--dash-shell-bg);
-  border-color: var(--dash-shell-border);
-  box-shadow: none;
-}
-
 .dashboard-page .dashboard-title {
   color: var(--dash-title);
 }
@@ -200,7 +253,7 @@ body {
 }
 
 .dashboard-page .dashboard-table-wrap {
-  background: var(--dash-table-wrap-bg);
+  background: transparent;
   border: 1px solid var(--dash-table-wrap-border);
 }
 
@@ -317,13 +370,14 @@ body {
 }
 
 .dashboard-form-icon-btn--active {
-  border-color: rgba(230, 57, 70, 0.35);
-  background: rgba(230, 57, 70, 0.1);
-  color: #e63946;
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.88);
 }
 
 .dashboard-form-icon-btn--active:hover {
-  background: rgba(230, 57, 70, 0.18);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .dashboard-form-icon-btn.dashboard-form-btn--disabled {
@@ -356,44 +410,111 @@ body {
 .dashboard-table-action-btn.btn-primary {
   box-shadow: none;
   transform: none;
+  padding: 0 8px;
+  font-size: 11px;
+  height: 28px;
 }
 
-.dashboard-table-action-btn.btn-primary:hover {
+.dashboard-table-action-btn.btn-primary:hover:not(:disabled) {
   box-shadow: none;
   transform: none;
 }
 
+.dashboard-table-action-btn.btn-secondary {
+  padding: 0 8px;
+  font-size: 11px;
+  height: 28px;
+}
+
 .dashboard-table-action-btn.btn-danger {
-  border: 1px solid #e63946;
-  color: #e63946;
-  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .dashboard-table-action-btn.btn-danger:hover:not(:disabled) {
-  background: rgba(230, 57, 70, 0.12);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.82);
 }
 
-body::before,
-body::after {
-  content: '';
-  position: fixed;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 0;
+.dashboard-page .dashboard-btn-secondary,
+.dashboard-page .dashboard-theme-btn {
+  background: var(--dash-btn-secondary-bg);
+  border: 1px solid var(--dash-btn-secondary-border);
+  color: var(--dash-btn-secondary-fg);
 }
-body::before {
-  width: 700px;
-  height: 700px;
-  background: radial-gradient(circle, rgba(230, 57, 70, 0.14) 0%, rgba(230, 57, 70, 0.04) 45%, transparent 70%);
-  top: -200px;
-  right: -120px;
+
+.metrics-stat-card {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  padding: 1.15rem 1.25rem;
+  text-align: center;
 }
-body::after {
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle, rgba(230, 57, 70, 0.08) 0%, rgba(230, 57, 70, 0.02) 45%, transparent 70%);
-  bottom: -120px;
-  left: -100px;
+
+.metrics-stat-card__label {
+  margin: 0 0 0.4rem;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.metrics-stat-card__value {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.metrics-question-card {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.metrics-question-card__title {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.5;
+}
+
+.metrics-question-card__meta {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.metrics-bar-track {
+  height: 0.45rem;
+  border-radius: 9999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.metrics-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #e63946 0%, #c1121f 100%);
+  transition: width 0.3s ease;
 }
 
 @keyframes panelIn {
@@ -579,30 +700,6 @@ body::after {
   background: rgba(230, 57, 70, 0.07);
   border-left: 3px solid #e63946;
   border-radius: 8px;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #e63946 0%, #c1121f 100%);
-  box-shadow: 0 4px 20px rgba(230, 57, 70, 0.35), inset 0 1px 0 rgba(255,255,255,0.1);
-  transition: box-shadow 0.15s ease, transform 0.1s ease;
-}
-.btn-primary:hover {
-  box-shadow: 0 6px 28px rgba(230, 57, 70, 0.5), inset 0 1px 0 rgba(255,255,255,0.1);
-  transform: translateY(-1px);
-}
-.btn-primary:active {
-  transform: translateY(0);
-}
-
-.btn-secondary {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.7);
-  transition: background 0.15s ease, border-color 0.15s ease;
-}
-.btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.18);
 }
 
 .step-badge {
