@@ -112,9 +112,7 @@ export default function FormResponsesModal({ open, theme = 'dark', sessionMeta, 
         onClick={onClose}
         aria-label="Cerrar"
       />
-      <div
-        className={`atv-modal-panel max-w-2xl ${isLight ? 'bg-white border-[rgba(17,24,39,0.08)]' : ''}`}
-      >
+      <div className="atv-modal-panel max-w-2xl">
         <div className="atv-modal-panel__inner">
           <div className="shrink-0 mb-5">
             <p className={`atv-modal-kicker ${isLight ? 'text-[rgba(17,24,39,0.45)]' : ''}`}>
@@ -133,7 +131,7 @@ export default function FormResponsesModal({ open, theme = 'dark', sessionMeta, 
             </p>
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto pr-1 flex flex-col gap-3">
+          <div className="atv-modal-panel__scroll">
             {loading && (
               <p className="text-[14px] text-[rgba(255,255,255,0.45)]">Cargando respuestas...</p>
             )}
@@ -143,7 +141,7 @@ export default function FormResponsesModal({ open, theme = 'dark', sessionMeta, 
             {!loading && !error && responseKeys.map((key) => (
               <div
                 key={key}
-                className={`atv-modal-block ${isLight ? 'border-[rgba(17,24,39,0.08)] bg-[rgba(17,24,39,0.02)]' : ''}`}
+                className="atv-modal-block"
               >
                 <p className={`atv-modal-block__label ${isLight ? 'text-[rgba(17,24,39,0.45)]' : ''}`}>
                   {getFieldLabel(key)}
@@ -155,7 +153,7 @@ export default function FormResponsesModal({ open, theme = 'dark', sessionMeta, 
             ))}
           </div>
 
-          <div className="shrink-0 pt-6 flex flex-col gap-2">
+          <div className="atv-modal-panel__footer shrink-0 pt-6 flex flex-col gap-2">
             {downloadError && (
               <p className="text-[13px] text-[#e63946] text-center">{downloadError}</p>
             )}

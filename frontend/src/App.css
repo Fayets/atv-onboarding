@@ -508,6 +508,7 @@
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  isolation: isolate;
 }
 
 .atv-modal-overlay {
@@ -515,7 +516,8 @@
   inset: 0;
   border: 0;
   cursor: default;
-  background: rgba(0, 0, 0, 0.72);
+  background: rgba(0, 0, 0, 0.84);
+  backdrop-filter: blur(6px);
 }
 
 .atv-modal-panel {
@@ -527,11 +529,11 @@
   flex-direction: column;
   overflow: hidden;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: #121010;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow:
-    0 24px 80px rgba(0, 0, 0, 0.42),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    0 24px 80px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(0, 0, 0, 0.35);
   animation: login-enter 0.35s ease both;
 }
 
@@ -542,6 +544,18 @@
   flex-direction: column;
   min-height: 0;
   padding: 1.5rem 1.75rem;
+  background: inherit;
+}
+
+.atv-modal-panel__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-right: 0.25rem;
+  background: inherit;
 }
 
 .atv-modal-kicker {
@@ -569,9 +583,35 @@
 
 .atv-modal-block {
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
   padding: 0.85rem 1rem;
+}
+
+.atv-modal-backdrop[data-theme='light'] .atv-modal-overlay {
+  background: rgba(17, 24, 39, 0.55);
+}
+
+.atv-modal-backdrop[data-theme='light'] .atv-modal-panel {
+  background: #ffffff;
+  border-color: rgba(17, 24, 39, 0.1);
+  box-shadow: 0 24px 80px rgba(17, 24, 39, 0.18);
+}
+
+.atv-modal-backdrop[data-theme='light'] .atv-modal-block {
+  background: rgba(17, 24, 39, 0.03);
+  border-color: rgba(17, 24, 39, 0.08);
+}
+
+.atv-modal-panel__footer {
+  margin-top: 0.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: inherit;
+}
+
+.atv-modal-backdrop[data-theme='light'] .atv-modal-panel__footer {
+  border-top-color: rgba(17, 24, 39, 0.08);
 }
 
 .atv-modal-block__label {
