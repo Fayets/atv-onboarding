@@ -6,9 +6,9 @@ import {
   ApiError,
   deleteSession,
   getDashboard,
+  getSessionAccessPassword,
   getSessionForm,
-  markCallCompleted,
-  markCallScheduled,
+  resendSessionAccess,
   updateSessionEstado,
 } from '../api/client';
 
@@ -19,8 +19,6 @@ const ESTADO_OPTIONS = [
   { value: 'todos', label: 'Todos' },
   { value: 'enviado', label: 'Enviado' },
   { value: 'formulario_completo', label: 'Formulario completo' },
-  { value: 'call_agendada', label: 'Call agendada' },
-  { value: 'call_realizada', label: 'Call realizada' },
 ];
 
 const ESTADO_ROW_OPTIONS = ESTADO_OPTIONS.filter(({ value }) => value !== 'todos');
@@ -65,6 +63,26 @@ function DocumentIcon() {
   );
 }
 
+function EyeIcon({ hidden }) {
+  if (hidden) {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" width="14" height="14" aria-hidden="true">
+        <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M1 1l22 22" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M14.12 14.12a3 3 0 11-4.24-4.24" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" width="14" height="14" aria-hidden="true">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
 function SunIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" width="18" height="18" aria-hidden="true">
@@ -95,11 +113,12 @@ export default function DashboardPage() {
   const [error, setError] = useState('');
   const [unauthorized, setUnauthorized] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState(null);
+  const [visiblePasswords, setVisiblePasswords] = useState({});
+  const [revealedPasswordIds, setRevealedPasswordIds] = useState({});
 
   const [search, setSearch] = useState('');
   const [planFilter, setPlanFilter] = useState('Todos');
   const [estadoFilter, setEstadoFilter] = useState('todos');
-  const [alertsOnly, setAlertsOnly] = useState(false);
   const [sortField, setSortField] = useState('created_at');
   const [sortDirection, setSortDirection] = useState('desc');
 
@@ -150,26 +169,17 @@ export default function DashboardPage() {
 
       if (planFilter !== 'Todos' && session.plan !== planFilter) return false;
       if (estadoFilter !== 'todos' && session.estado_actual !== estadoFilter) return false;
-      if (alertsOnly && !session.alerta) return false;
 
       return true;
     });
-  }, [sessions, search, planFilter, estadoFilter, alertsOnly]);
+  }, [sessions, search, planFilter, estadoFilter]);
 
   const sortedSessions = useMemo(() => {
     const sorted = [...filteredSessions];
 
     sorted.sort((a, b) => {
-      let aValue;
-      let bValue;
-
-      if (sortField === 'dias_en_estado') {
-        aValue = a.dias_en_estado ?? 0;
-        bValue = b.dias_en_estado ?? 0;
-      } else {
-        aValue = a.created_at ? new Date(a.created_at).getTime() : 0;
-        bValue = b.created_at ? new Date(b.created_at).getTime() : 0;
-      }
+      const aValue = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const bValue = b.created_at ? new Date(b.created_at).getTime() : 0;
 
       if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
       if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
@@ -177,7 +187,7 @@ export default function DashboardPage() {
     });
 
     return sorted;
-  }, [filteredSessions, sortField, sortDirection]);
+  }, [filteredSessions, sortDirection]);
 
   function toggleTheme() {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
@@ -190,30 +200,6 @@ export default function DashboardPage() {
     }
     setSortField(field);
     setSortDirection('desc');
-  }
-
-  async function handleMarkScheduled(sessionId) {
-    setActionLoadingId(`${sessionId}-scheduled`);
-    try {
-      await markCallScheduled(sessionId);
-      await loadDashboard();
-    } catch (err) {
-      setError(err.message || 'No se pudo marcar la call como agendada.');
-    } finally {
-      setActionLoadingId(null);
-    }
-  }
-
-  async function handleMarkCompleted(sessionId) {
-    setActionLoadingId(`${sessionId}-completed`);
-    try {
-      await markCallCompleted(sessionId);
-      await loadDashboard();
-    } catch (err) {
-      setError(err.message || 'No se pudo marcar la call como realizada.');
-    } finally {
-      setActionLoadingId(null);
-    }
   }
 
   async function handleEstadoChange(session, newEstado) {
@@ -245,6 +231,16 @@ export default function DashboardPage() {
       if (formModalSession?.id === session.id) {
         closeFormModal();
       }
+      setVisiblePasswords((prev) => {
+        const next = { ...prev };
+        delete next[session.id];
+        return next;
+      });
+      setRevealedPasswordIds((prev) => {
+        const next = { ...prev };
+        delete next[session.id];
+        return next;
+      });
       await loadDashboard();
     } catch (err) {
       setError(err.message || 'No se pudo eliminar el cliente.');
@@ -256,10 +252,63 @@ export default function DashboardPage() {
   function isEstadoOptionDisabled(session, estado) {
     if (estado === 'enviado') return session.form_submitted;
     if (estado === 'formulario_completo') return !session.form_submitted;
-    if (estado === 'call_agendada' || estado === 'call_realizada') {
-      return !session.form_submitted;
-    }
     return false;
+  }
+
+  async function handleTogglePassword(session) {
+    const sessionId = session.id;
+
+    if (revealedPasswordIds[sessionId] && visiblePasswords[sessionId]) {
+      setRevealedPasswordIds((prev) => ({ ...prev, [sessionId]: false }));
+      return;
+    }
+
+    if (visiblePasswords[sessionId]) {
+      setRevealedPasswordIds((prev) => ({ ...prev, [sessionId]: true }));
+      return;
+    }
+
+    setActionLoadingId(`${sessionId}-password`);
+    setError('');
+    try {
+      const data = await getSessionAccessPassword(sessionId);
+      setVisiblePasswords((prev) => ({ ...prev, [sessionId]: data.password }));
+      setRevealedPasswordIds((prev) => ({ ...prev, [sessionId]: true }));
+    } catch (err) {
+      setError(err.message || 'No se pudo obtener la clave de acceso.');
+    } finally {
+      setActionLoadingId(null);
+    }
+  }
+
+  async function handleResendAccess(session) {
+    const clientLabel = session.client_name || session.client_email || 'este cliente';
+    const confirmed = window.confirm(
+      `¿Generar y reenviar una nueva clave de acceso a ${clientLabel}? La clave anterior dejará de funcionar.`,
+    );
+    if (!confirmed) return;
+
+    setActionLoadingId(`${session.id}-resend`);
+    setError('');
+    try {
+      const data = await resendSessionAccess(session.id);
+      setVisiblePasswords((prev) => ({ ...prev, [session.id]: data.password }));
+      setRevealedPasswordIds((prev) => ({ ...prev, [session.id]: true }));
+      setSessions((prev) =>
+        prev.map((item) =>
+          item.id === session.id
+            ? { ...item, has_access_password: true, expires_at: data.expires_at }
+            : item,
+        ),
+      );
+      if (!data.email_sent) {
+        setError('Clave generada, pero no se pudo enviar el email. Revisá la configuración SMTP.');
+      }
+    } catch (err) {
+      setError(err.message || 'No se pudo reenviar la clave de acceso.');
+    } finally {
+      setActionLoadingId(null);
+    }
   }
 
   async function handleOpenForm(session) {
@@ -362,7 +411,7 @@ export default function DashboardPage() {
 
         <main className="atv-module-main">
           <div className="atv-glass-panel">
-            <div className="shrink-0 mb-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+            <div className="shrink-0 mb-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
               <input
                 type="search"
                 value={search}
@@ -392,16 +441,6 @@ export default function DashboardPage() {
                   </option>
                 ))}
               </select>
-              <button
-                type="button"
-                onClick={() => setAlertsOnly((prev) => !prev)}
-                className={`dashboard-toggle px-4 py-2.5 text-[13px] cursor-pointer ${alertsOnly ? 'active' : ''}`}
-              >
-                <span className="inline-flex items-center gap-2">
-                  {alertsOnly ? <span className="atv-alert-dot" aria-hidden="true" /> : null}
-                  Solo alertas
-                </span>
-              </button>
             </div>
 
             <div className="shrink-0 mb-4 flex items-center justify-between gap-3">
@@ -426,7 +465,7 @@ export default function DashboardPage() {
                 </p>
               ) : (
                 <div className="overflow-x-auto min-h-0">
-                  <table className="w-full min-w-[1080px] border-collapse">
+                  <table className="w-full min-w-[980px] border-collapse">
                     <thead className="dashboard-thead sticky top-0 z-[1] backdrop-blur-sm">
                       <tr className="dashboard-row">
                         <th className="dashboard-th text-left text-[11px] uppercase tracking-[0.08em] font-semibold py-2.5 px-3">
@@ -451,32 +490,26 @@ export default function DashboardPage() {
                             <SortIndicator active={sortField === 'created_at'} direction={sortDirection} />
                           </button>
                         </th>
-                        <th className="text-left py-2.5 px-3 min-w-[140px] whitespace-nowrap">
-                          <button
-                            type="button"
-                            onClick={() => toggleSort('dias_en_estado')}
-                            className={`dashboard-sort-btn ${sortField === 'dias_en_estado' ? 'active' : ''}`}
-                          >
-                            Días en estado
-                            <SortIndicator active={sortField === 'dias_en_estado'} direction={sortDirection} />
-                          </button>
+                        <th className="dashboard-th text-left text-[11px] uppercase tracking-[0.08em] font-semibold py-2.5 px-3 min-w-[150px]">
+                          Clave de acceso
                         </th>
                         <th className="dashboard-th text-center text-[11px] uppercase tracking-[0.08em] font-semibold py-2.5 px-3 w-[72px]">
                           Formulario
                         </th>
-                        <th className="dashboard-th text-left text-[11px] uppercase tracking-[0.08em] font-semibold py-2.5 px-3 min-w-[220px]">
+                        <th className="dashboard-th text-left text-[11px] uppercase tracking-[0.08em] font-semibold py-2.5 px-3 min-w-[200px]">
                           Acciones
                         </th>
                       </tr>
                     </thead>
                     <tbody>
                       {sortedSessions.map((session) => {
-                        const canSchedule = session.form_submitted && !session.call_scheduled_at;
-                        const canComplete = Boolean(session.call_scheduled_at) && !session.call_completed_at;
-                        const scheduling = actionLoadingId === `${session.id}-scheduled`;
-                        const completing = actionLoadingId === `${session.id}-completed`;
                         const deleting = actionLoadingId === `${session.id}-delete`;
+                        const resending = actionLoadingId === `${session.id}-resend`;
+                        const loadingPassword = actionLoadingId === `${session.id}-password`;
                         const hasForm = Boolean(session.form_submitted);
+                        const passwordValue = visiblePasswords[session.id];
+                        const isRevealed = Boolean(revealedPasswordIds[session.id] && passwordValue);
+                        const maskedLabel = session.has_access_password ? '••••••••' : 'Sin clave';
 
                         return (
                           <tr
@@ -514,13 +547,32 @@ export default function DashboardPage() {
                             <td className="py-2.5 px-3 text-[13px] dashboard-text-strong font-mono-num whitespace-nowrap">
                               {formatDate(session.created_at)}
                             </td>
-                            <td className="py-2.5 px-3 text-[13px] dashboard-text-strong font-mono-num min-w-[72px] whitespace-nowrap">
-                              <span className="inline-flex items-center gap-1.5">
-                                {session.alerta && (
-                                  <span className="atv-alert-dot" aria-label="Alerta activa" />
-                                )}
-                                {session.dias_en_estado}
-                              </span>
+                            <td className="py-2.5 px-3 min-w-[150px]">
+                              <div className="dashboard-access-key">
+                                <span className="dashboard-access-key__value font-mono-num">
+                                  {loadingPassword
+                                    ? '...'
+                                    : isRevealed
+                                      ? passwordValue
+                                      : maskedLabel}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleTogglePassword(session)}
+                                  disabled={loadingPassword || (!session.has_access_password && !passwordValue)}
+                                  className="dashboard-access-key__toggle btn-secondary"
+                                  aria-label={isRevealed ? 'Ocultar clave' : 'Ver clave de acceso'}
+                                  title={
+                                    session.has_access_password || passwordValue
+                                      ? isRevealed
+                                        ? 'Ocultar clave'
+                                        : 'Ver clave'
+                                      : 'Reenviá una clave nueva'
+                                  }
+                                >
+                                  <EyeIcon hidden={isRevealed} />
+                                </button>
+                              </div>
                             </td>
                             <td className="py-2.5 px-3 text-center">
                               <button
@@ -535,22 +587,14 @@ export default function DashboardPage() {
                               </button>
                             </td>
                             <td className="py-2.5 px-3">
-                              <div className="flex flex-row flex-wrap gap-1.5 min-w-[280px]">
+                              <div className="flex flex-row flex-wrap gap-1.5 min-w-[200px]">
                                 <button
                                   type="button"
-                                  disabled={!canSchedule || scheduling}
-                                  onClick={() => handleMarkScheduled(session.id)}
+                                  disabled={resending}
+                                  onClick={() => handleResendAccess(session)}
                                   className="dashboard-table-action-btn btn-secondary"
                                 >
-                                  {scheduling ? '...' : 'Call agendada'}
-                                </button>
-                                <button
-                                  type="button"
-                                  disabled={!canComplete || completing}
-                                  onClick={() => handleMarkCompleted(session.id)}
-                                  className="dashboard-table-action-btn btn-primary"
-                                >
-                                  {completing ? '...' : 'Call realizada'}
+                                  {resending ? '...' : 'Reenviar clave'}
                                 </button>
                                 <button
                                   type="button"

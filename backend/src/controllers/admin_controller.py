@@ -149,35 +149,35 @@ def get_session_form(session_id: UUID, _: str = Depends(verify_ecosystem_session
         )
 
 
-@router.patch(
-    "/sessions/{session_id}/call-scheduled",
-    response_model=schemas.CallStatusResponse,
+@router.get(
+    "/sessions/{session_id}/access-password",
+    response_model=schemas.SessionAccessPasswordResponse,
 )
-def mark_call_scheduled(session_id: UUID, _: str = Depends(verify_ecosystem_session)):
+def get_access_password(session_id: UUID, _: str = Depends(verify_ecosystem_session)):
     try:
-        return service.mark_call_scheduled(session_id)
+        return service.get_access_password(session_id)
     except HTTPException as e:
         raise e
     except Exception:
         raise HTTPException(
             status_code=500,
-            detail="Error inesperado al marcar la call como agendada.",
+            detail="Error inesperado al obtener la clave de acceso.",
         )
 
 
-@router.patch(
-    "/sessions/{session_id}/call-completed",
-    response_model=schemas.CallStatusResponse,
+@router.post(
+    "/sessions/{session_id}/resend-access",
+    response_model=schemas.ResendAccessResponse,
 )
-def mark_call_completed(session_id: UUID, _: str = Depends(verify_ecosystem_session)):
+def resend_access_password(session_id: UUID, _: str = Depends(verify_ecosystem_session)):
     try:
-        return service.mark_call_completed(session_id)
+        return service.resend_access_password(session_id)
     except HTTPException as e:
         raise e
     except Exception:
         raise HTTPException(
             status_code=500,
-            detail="Error inesperado al marcar la call como realizada.",
+            detail="Error inesperado al reenviar la clave de acceso.",
         )
 
 

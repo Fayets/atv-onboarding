@@ -13,6 +13,7 @@ from pony.orm import db_session
 
 from src import schemas
 from src.models import OnboardingSession
+from src.password_crypto import decrypt_password, encrypt_password
 from src.services.email_service import EmailServices, ONBOARDING_FRONTEND_URL
 
 logger = logging.getLogger(__name__)
@@ -25,10 +26,12 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
-def _days_since(reference: datetime | None, now: datetime) -> int:
-    if not reference:
-        return 0
-    return max(0, (now - reference).days)
+def _generate_password() -> str:
+    return "".join(secrets.choice(PASSWORD_ALPHABET) for _ in range(8))
+
+
+def _hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
 def _resolve_form_submitted_at(session: OnboardingSession) -> datetime | None:
@@ -42,14 +45,10 @@ def _resolve_form_submitted_at(session: OnboardingSession) -> datetime | None:
     return None
 
 
-def _compute_estado(session: OnboardingSession) -> tuple[str, datetime | None]:
-    if session.call_completed_at:
-        return "call_realizada", session.call_completed_at
-    if session.call_scheduled_at:
-        return "call_agendada", session.call_scheduled_at
+def _compute_estado(session: OnboardingSession) -> str:
     if session.form_submitted:
-        return "formulario_completo", _resolve_form_submitted_at(session) or session.created_at
-    return "enviado", session.created_at
+        return "formulario_completo"
+    return "enviado"
 
 
 def _resolve_form_data(session: OnboardingSession) -> schemas.FormSubmitRequest | None:
@@ -67,23 +66,17 @@ def _resolve_form_data(session: OnboardingSession) -> schemas.FormSubmitRequest 
 
 
 def _to_dashboard_item(session: OnboardingSession) -> schemas.DashboardSessionItem:
-    now = _utc_now()
-    estado_actual, state_at = _compute_estado(session)
-    dias_en_estado = _days_since(state_at, now)
-
     return schemas.DashboardSessionItem(
         id=session.id,
         client_name=session.client_name,
         client_email=session.client_email,
         plan=session.plan,
         created_at=session.created_at,
+        expires_at=session.expires_at,
         form_submitted=session.form_submitted,
         form_submitted_at=session.form_submitted_at or _resolve_form_submitted_at(session),
-        call_scheduled_at=session.call_scheduled_at,
-        call_completed_at=session.call_completed_at,
-        estado_actual=estado_actual,
-        dias_en_estado=dias_en_estado,
-        alerta=dias_en_estado > 3,
+        estado_actual=_compute_estado(session),
+        has_access_password=bool(session.password_encrypted),
         form_data=_resolve_form_data(session),
     )
 
@@ -109,10 +102,9 @@ class AdminServices:
                 detail="Plan inválido. Opciones: Boost, Mentoría, Advantage.",
             )
 
-        password = "".join(secrets.choice(PASSWORD_ALPHABET) for _ in range(8))
-        password_hash = bcrypt.hashpw(
-            password.encode("utf-8"), bcrypt.gensalt()
-        ).decode("utf-8")
+        password = _generate_password()
+        password_hash = _hash_password(password)
+        password_encrypted = encrypt_password(password)
         channel_slug = slugify_name(payload.name)
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         expires_at = now + timedelta(hours=48)
@@ -125,6 +117,7 @@ class AdminServices:
                 client_email=payload.email,
                 plan=payload.plan,
                 password_hash=password_hash,
+                password_encrypted=password_encrypted,
                 used=False,
                 skool_used=False,
                 form_submitted=False,
@@ -270,56 +263,71 @@ class AdminServices:
                 form_data=schemas.FormSubmitRequest(**latest_form.form_data),
             )
 
-    def mark_call_scheduled(self, session_id: UUID) -> schemas.CallStatusResponse:
+    def get_access_password(self, session_id: UUID) -> schemas.SessionAccessPasswordResponse:
         with db_session:
             session = OnboardingSession.get(id=session_id)
             if not session:
                 raise HTTPException(status_code=404, detail="Sesión no encontrada.")
 
-            if not session.form_submitted:
+            password = decrypt_password(session.password_encrypted)
+            if not password:
                 raise HTTPException(
-                    status_code=400,
-                    detail="El cliente debe completar el formulario antes de agendar la call.",
+                    status_code=404,
+                    detail="La clave no está disponible. Reenviá una nueva al cliente.",
                 )
 
-            if session.call_scheduled_at:
-                raise HTTPException(
-                    status_code=400,
-                    detail="La call ya fue marcada como agendada.",
-                )
+            return schemas.SessionAccessPasswordResponse(
+                session_id=str(session_id),
+                password=password,
+                expires_at=session.expires_at,
+            )
 
-            now = _utc_now()
-            session.call_scheduled_at = now
-
-        return schemas.CallStatusResponse(
-            session_id=str(session_id),
-            call_scheduled_at=now,
-        )
-
-    def mark_call_completed(self, session_id: UUID) -> schemas.CallStatusResponse:
+    def resend_access_password(self, session_id: UUID) -> schemas.ResendAccessResponse:
         with db_session:
             session = OnboardingSession.get(id=session_id)
             if not session:
                 raise HTTPException(status_code=404, detail="Sesión no encontrada.")
 
-            if not session.call_scheduled_at:
+            if not session.client_email or not session.client_name:
                 raise HTTPException(
                     status_code=400,
-                    detail="La call debe estar agendada antes de marcarla como realizada.",
+                    detail="La sesión no tiene email o nombre de cliente.",
                 )
 
-            if session.call_completed_at:
-                raise HTTPException(
-                    status_code=400,
-                    detail="La call ya fue marcada como realizada.",
-                )
-
+            password = _generate_password()
             now = _utc_now()
-            session.call_completed_at = now
+            expires_at = now + timedelta(hours=48)
 
-        return schemas.CallStatusResponse(
+            session.password_hash = _hash_password(password)
+            session.password_encrypted = encrypt_password(password)
+            session.expires_at = expires_at
+            session.used = False
+
+            client_email = session.client_email
+            client_name = session.client_name
+            plan = session.plan or "Boost"
+
+        email_sent = False
+        try:
+            self._email.send_onboarding_email(
+                to_email=client_email,
+                name=client_name,
+                password=password,
+                plan=plan,
+                expires_at=expires_at,
+                onboarding_url=f"{ONBOARDING_FRONTEND_URL}/",
+            )
+            email_sent = True
+        except Exception:
+            logger.exception(
+                "Error al reenviar email de onboarding a %s", client_email
+            )
+
+        return schemas.ResendAccessResponse(
             session_id=str(session_id),
-            call_completed_at=now,
+            password=password,
+            expires_at=expires_at,
+            email_sent=email_sent,
         )
 
     def update_estado(
@@ -332,16 +340,12 @@ class AdminServices:
             if not session:
                 raise HTTPException(status_code=404, detail="Sesión no encontrada.")
 
-            now = _utc_now()
-
             if estado == "enviado":
                 if session.form_submitted:
                     raise HTTPException(
                         status_code=400,
                         detail="No se puede volver a 'Enviado' si el formulario ya fue completado.",
                     )
-                session.call_scheduled_at = None
-                session.call_completed_at = None
 
             elif estado == "formulario_completo":
                 if not session.form_submitted:
@@ -349,38 +353,12 @@ class AdminServices:
                         status_code=400,
                         detail="El cliente debe completar el formulario.",
                     )
-                session.call_scheduled_at = None
-                session.call_completed_at = None
 
-            elif estado == "call_agendada":
-                if not session.form_submitted:
-                    raise HTTPException(
-                        status_code=400,
-                        detail="El cliente debe completar el formulario antes de agendar la call.",
-                    )
-                if not session.call_scheduled_at:
-                    session.call_scheduled_at = now
-                session.call_completed_at = None
-
-            elif estado == "call_realizada":
-                if not session.form_submitted:
-                    raise HTTPException(
-                        status_code=400,
-                        detail="El cliente debe completar el formulario antes de marcar la call.",
-                    )
-                if not session.call_scheduled_at:
-                    session.call_scheduled_at = now
-                session.call_completed_at = now
-
-            estado_actual, _ = _compute_estado(session)
-            call_scheduled_at = session.call_scheduled_at
-            call_completed_at = session.call_completed_at
+            estado_actual = _compute_estado(session)
 
         return schemas.UpdateEstadoResponse(
             session_id=str(session_id),
             estado_actual=estado_actual,
-            call_scheduled_at=call_scheduled_at,
-            call_completed_at=call_completed_at,
         )
 
     def delete_session(self, session_id: UUID) -> schemas.DeleteSessionResponse:

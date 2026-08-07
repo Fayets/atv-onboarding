@@ -81,18 +81,15 @@ export async function getSessionForm(sessionId) {
   return parseResponse(res);
 }
 
-export async function markCallScheduled(sessionId) {
-  const res = await fetch(`/api/admin/sessions/${sessionId}/call-scheduled`, {
-    ...defaultOptions,
-    method: 'PATCH',
-  });
+export async function getSessionAccessPassword(sessionId) {
+  const res = await fetch(`/api/admin/sessions/${sessionId}/access-password`, defaultOptions);
   return parseResponse(res);
 }
 
-export async function markCallCompleted(sessionId) {
-  const res = await fetch(`/api/admin/sessions/${sessionId}/call-completed`, {
+export async function resendSessionAccess(sessionId) {
+  const res = await fetch(`/api/admin/sessions/${sessionId}/resend-access`, {
     ...defaultOptions,
-    method: 'PATCH',
+    method: 'POST',
   });
   return parseResponse(res);
 }

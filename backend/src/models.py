@@ -14,6 +14,7 @@ class OnboardingSession(db.Entity):
     client_email = Optional(str)
     plan = Optional(str)
     password_hash = Optional(str)
+    password_encrypted = Optional(str)
     used = Required(bool, default=False)
     skool_used = Required(bool, default=False)
     form_submitted = Required(bool, default=False)

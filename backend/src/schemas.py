@@ -107,8 +107,6 @@ class PendingRoleAssignmentResponse(BaseModel):
 EstadoOnboarding = Literal[
     "enviado",
     "formulario_completo",
-    "call_agendada",
-    "call_realizada",
 ]
 
 
@@ -118,13 +116,11 @@ class DashboardSessionItem(BaseModel):
     client_email: str | None = None
     plan: str | None = None
     created_at: datetime | None = None
+    expires_at: datetime | None = None
     form_submitted: bool
     form_submitted_at: datetime | None = None
-    call_scheduled_at: datetime | None = None
-    call_completed_at: datetime | None = None
     estado_actual: EstadoOnboarding
-    dias_en_estado: int
-    alerta: bool
+    has_access_password: bool
     form_data: FormSubmitRequest | None = None
 
 
@@ -132,11 +128,18 @@ class DashboardResponse(BaseModel):
     sessions: list[DashboardSessionItem]
 
 
-class CallStatusResponse(BaseModel):
+class SessionAccessPasswordResponse(BaseModel):
+    session_id: str
+    password: str
+    expires_at: datetime | None = None
+
+
+class ResendAccessResponse(BaseModel):
     ok: bool = True
     session_id: str
-    call_scheduled_at: datetime | None = None
-    call_completed_at: datetime | None = None
+    password: str
+    expires_at: datetime
+    email_sent: bool
 
 
 class UpdateEstadoRequest(BaseModel):
@@ -147,8 +150,6 @@ class UpdateEstadoResponse(BaseModel):
     ok: bool = True
     session_id: str
     estado_actual: EstadoOnboarding
-    call_scheduled_at: datetime | None = None
-    call_completed_at: datetime | None = None
 
 
 class SessionFormResponse(BaseModel):

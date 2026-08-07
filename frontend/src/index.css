@@ -389,6 +389,34 @@ body {
   color: var(--dash-form-btn-disabled-fg);
 }
 
+.dashboard-access-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  max-width: 100%;
+}
+
+.dashboard-access-key__value {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.82);
+  min-width: 4.5rem;
+}
+
+.dashboard-access-key__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.dashboard-page[data-theme='light'] .dashboard-access-key__value {
+  color: rgba(17, 24, 39, 0.82);
+}
+
 .dashboard-table-action-btn {
   display: inline-flex;
   align-items: center;
