@@ -467,6 +467,8 @@ export default function OnboardingPage() {
               <OnboardingForm
                 readOnly={Boolean(client?.form_submitted)}
                 initialData={client?.form_data}
+                clientName={client?.client_name}
+                clientEmail={client?.client_email}
                 onSubmitted={handleFormSubmitted}
                 onPrevious={() => goToStep(4)}
                 onContinue={() => goToStep(6)}

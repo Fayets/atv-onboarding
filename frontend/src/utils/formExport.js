@@ -110,6 +110,8 @@ function buildPdfMetadataCard(data) {
 
   if (submittedAt) {
     rows.push(['Enviado', submittedAt]);
+  } else if (data?.is_draft) {
+    rows.push(['Estado', 'Borrador — pendiente de envío al servidor']);
   }
 
   return {
@@ -362,4 +364,15 @@ export async function downloadFormFile(data) {
     console.error('Error al generar PDF:', error);
     throw new Error('No se pudo generar el PDF.');
   }
+}
+
+/** Exporta respuestas del borrador local (cliente aún no envió al servidor). */
+export async function downloadDraftFormFile({ clientName, clientEmail, plan, formData }) {
+  return downloadFormFile({
+    client_name: clientName || 'Cliente ATV',
+    client_email: clientEmail || null,
+    plan: plan || null,
+    form_data: formData,
+    is_draft: true,
+  });
 }

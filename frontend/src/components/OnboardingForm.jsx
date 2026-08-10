@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getSession, submitForm } from '../api/client';
+import { downloadDraftFormFile, downloadFormFile } from '../utils/formExport';
 
 const QUESTION_IDS = Array.from({ length: 49 }, (_, i) => String(i + 1));
 const TOTAL_QUESTIONS = QUESTION_IDS.length;
@@ -593,6 +594,8 @@ function QuestionField({ question, value, onChange, readOnly, inputClass, readOn
 export default function OnboardingForm({
   readOnly = false,
   initialData = null,
+  clientName = null,
+  clientEmail = null,
   onSubmitted,
   onPrevious,
   onContinue,
@@ -600,9 +603,12 @@ export default function OnboardingForm({
   const emptyForm = useMemo(() => createEmptyForm(), []);
   const [form, setForm] = useState(emptyForm);
   const [sessionId, setSessionId] = useState(null);
+  const [clientMeta, setClientMeta] = useState({ clientName: null, clientEmail: null });
   const [draftRestored, setDraftRestored] = useState(false);
   const [submitState, setSubmitState] = useState('idle');
   const [errorMsg, setErrorMsg] = useState('');
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfError, setPdfError] = useState('');
 
   const completedCount = useMemo(() => countCompletedFields(form), [form]);
   const progressPercent = Math.round((completedCount / TOTAL_QUESTIONS) * 100);
@@ -613,6 +619,10 @@ export default function OnboardingForm({
       if (initialData) {
         setForm({ ...emptyForm, ...initialData });
       }
+      setClientMeta({
+        clientName: clientName || null,
+        clientEmail: clientEmail || null,
+      });
       return undefined;
     }
 
@@ -625,6 +635,10 @@ export default function OnboardingForm({
 
         const id = session?.id ? String(session.id) : null;
         setSessionId(id);
+        setClientMeta({
+          clientName: session?.client_name || null,
+          clientEmail: session?.client_email || null,
+        });
 
         if (id) {
           const draft = loadDraft(id);
@@ -650,7 +664,7 @@ export default function OnboardingForm({
     return () => {
       cancelled = true;
     };
-  }, [readOnly, initialData, emptyForm]);
+  }, [readOnly, initialData, emptyForm, clientName, clientEmail]);
 
   useEffect(() => {
     if (readOnly || !sessionId || submitState === 'success') return undefined;
@@ -692,6 +706,7 @@ export default function OnboardingForm({
 
       while (attempts < maxAttempts) {
         try {
+          await getSession();
           await submitForm(form);
           clearDraft(sessionId);
           setSubmitState('success');
@@ -702,6 +717,14 @@ export default function OnboardingForm({
             clearDraft(sessionId);
             setSubmitState('success');
             onSubmitted();
+            return;
+          }
+
+          if (err.status === 401 || err.message?.includes('No autorizado')) {
+            setSubmitState('error');
+            setErrorMsg(
+              'Tu sesión expiró. Volvé a ingresar con tu clave en otra pestaña; tus respuestas quedaron guardadas en este dispositivo.',
+            );
             return;
           }
 
@@ -717,6 +740,35 @@ export default function OnboardingForm({
     },
     [form, onSubmitted, readOnly, sessionId],
   );
+
+  const handleDownloadPdf = useCallback(async () => {
+    setPdfLoading(true);
+    setPdfError('');
+    try {
+      const payload = {
+        clientName: clientMeta.clientName,
+        clientEmail: clientMeta.clientEmail,
+        formData: form,
+      };
+
+      if (readOnly) {
+        await downloadFormFile({
+          client_name: clientMeta.clientName || 'Cliente ATV',
+          client_email: clientMeta.clientEmail,
+          form_data: form,
+          submitted_at: new Date().toISOString(),
+        });
+      } else {
+        await downloadDraftFormFile(payload);
+      }
+    } catch (err) {
+      setPdfError(err.message || 'No se pudo generar el PDF.');
+    } finally {
+      setPdfLoading(false);
+    }
+  }, [clientMeta.clientEmail, clientMeta.clientName, form, readOnly]);
+
+  const canDownloadPdf = completedCount > 0;
 
   const inputClass =
     'w-full px-4 py-3 rounded-lg text-[14px] text-white placeholder-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] outline-none focus:border-[rgba(230,57,70,0.5)] focus:shadow-[0_0_0_3px_rgba(230,57,70,0.1)] transition-all duration-150';
@@ -799,11 +851,38 @@ export default function OnboardingForm({
           </section>
         ))}
 
-        {submitState === 'error' && !readOnly && (
-          <p className="text-[12.5px] text-[#e63946] leading-relaxed">
-            Error al enviar. Tus respuestas están guardadas localmente. Intentá de nuevo.
-            {errorMsg ? ` (${errorMsg})` : ''}
+        {draftRestored && !readOnly && (
+          <p className="text-[12.5px] text-[rgba(255,255,255,0.45)] leading-relaxed mb-4">
+            Recuperamos tu borrador guardado en este dispositivo. Si recargás la página (F5) con la
+            misma sesión activa, tus respuestas siguen acá.
           </p>
+        )}
+
+        {submitState === 'error' && !readOnly && (
+          <div className="text-[12.5px] text-[#e63946] leading-relaxed space-y-2">
+            <p>
+              {errorMsg ||
+                'Error al enviar. Tus respuestas están guardadas localmente. Intentá de nuevo.'}
+            </p>
+            {(errorMsg?.includes('sesión expiró') || errorMsg?.includes('No autorizado')) && (
+              <a
+                href="/"
+                className="inline-block text-[#e63946] underline underline-offset-2 hover:text-white transition-colors"
+              >
+                Volver a ingresar con tu clave →
+              </a>
+            )}
+            {canDownloadPdf && (
+              <p className="text-[rgba(255,255,255,0.55)]">
+                También podés descargar el PDF con tus respuestas y enviarlo por WhatsApp mientras
+                resolvemos el acceso.
+              </p>
+            )}
+          </div>
+        )}
+
+        {pdfError && (
+          <p className="text-[12.5px] text-[#e63946] leading-relaxed mb-3">{pdfError}</p>
         )}
 
         <div className="flex gap-[10px] items-stretch">
@@ -840,6 +919,31 @@ export default function OnboardingForm({
             </button>
           )}
         </div>
+
+        {canDownloadPdf && (
+          <button
+            type="button"
+            onClick={handleDownloadPdf}
+            disabled={pdfLoading || isSubmitting}
+            className="btn-secondary mt-3 w-full flex items-center justify-center gap-2 rounded-lg px-6 py-[0.85rem] text-[14.5px] font-sans tracking-[-0.01em] cursor-pointer border-0 disabled:opacity-60"
+          >
+            {pdfLoading ? (
+              <>
+                <SubmitSpinner />
+                Generando PDF...
+              </>
+            ) : (
+              'Descargar PDF de mis respuestas'
+            )}
+          </button>
+        )}
+
+        {canDownloadPdf && !readOnly && (
+          <p className="mt-2 text-[12px] text-[rgba(255,255,255,0.4)] leading-relaxed text-center">
+            Podés enviar el PDF por WhatsApp como respaldo. Tus respuestas también se guardan solas
+            en este navegador.
+          </p>
+        )}
       </form>
     </>
   );

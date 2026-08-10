@@ -22,10 +22,11 @@ class AuthServices:
         now = datetime.now(timezone.utc).replace(tzinfo=None)
 
         with db_session:
+            # Permitir re-login hasta completar el formulario (cookie puede vencer).
             records = [
                 s
                 for s in list(OnboardingSession.select())
-                if not s.used and s.expires_at and s.expires_at > now
+                if s.expires_at and s.expires_at > now and not s.form_submitted
             ]
 
             match = None
@@ -43,7 +44,8 @@ class AuthServices:
                     detail="Contraseña incorrecta o expirada.",
                 )
 
-            match.used = True
+            if not match.used:
+                match.used = True
             return match.id
 
     def parse_session_id(self, raw: str | None) -> UUID:
