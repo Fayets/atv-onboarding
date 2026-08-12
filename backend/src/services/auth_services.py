@@ -1,5 +1,4 @@
-import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from uuid import UUID
 
 import bcrypt
@@ -19,14 +18,10 @@ class AuthServices:
         if not password:
             raise HTTPException(status_code=400, detail="Ingresá tu contraseña.")
 
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
-
         with db_session:
-            # Permitir re-login hasta completar el formulario (cookie puede vencer).
+            # Sin vencimiento de clave: se puede reingresar hasta completar el formulario.
             records = [
-                s
-                for s in list(OnboardingSession.select())
-                if s.expires_at and s.expires_at > now and not s.form_submitted
+                s for s in list(OnboardingSession.select()) if not s.form_submitted
             ]
 
             match = None
@@ -41,7 +36,7 @@ class AuthServices:
             if not match:
                 raise HTTPException(
                     status_code=401,
-                    detail="Contraseña incorrecta o expirada.",
+                    detail="Contraseña incorrecta.",
                 )
 
             if not match.used:

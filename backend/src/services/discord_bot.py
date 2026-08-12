@@ -133,7 +133,7 @@ def _build_welcome_script(name: str) -> str:
         "Vamos a coordinar la primera sesión por acá, avisanos cuando hayas completado "
         "todo y te enviamos el link de Calendly [juan/ale]\n"
         "\n"
-        "Si algo no te llega al mail o la contraseña expiró, avisame acá y lo resolvemos.\n"
+        "Si algo no te llega al mail, avisame acá y lo resolvemos.\n"
         "\n"
         "¡Bienvenido a ATV!"
     )
@@ -144,14 +144,14 @@ def _build_success_embed(
     email: str,
     plan: str,
     password: str,
-    expires_at: str,
+    expires_at: str | None = None,
 ) -> tuple[discord.Embed, str | None]:
     embed = discord.Embed(
         title="ONBOARDING ENVIADO! ✅",
         description=(
             "El acceso fue creado y enviado correctamente. El cliente ya recibió su "
-            "correo con la contraseña y las invitaciones a Discord y Skool. Tiene 48 "
-            "horas para ingresar antes de que el acceso expire automáticamente."
+            "correo con la contraseña y las invitaciones a Discord y Skool. La clave "
+            "no vence: puede completar el onboarding cuando quiera."
         ),
         color=0xE63946,
     )
@@ -159,7 +159,6 @@ def _build_success_embed(
     embed.add_field(name="📧 Email", value=email, inline=True)
     embed.add_field(name="🎯 Plan", value=plan, inline=True)
     embed.add_field(name="🔑 Contraseña", value=password, inline=True)
-    embed.add_field(name="📅 Expira", value=_format_datetime(expires_at), inline=True)
     embed.add_field(
         name="📨 Fecha de envío",
         value=_format_datetime(datetime.now()),

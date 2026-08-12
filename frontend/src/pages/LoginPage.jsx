@@ -36,7 +36,7 @@ export default function LoginPage() {
       await login(password.trim());
       navigate('/start');
     } catch (err) {
-      setError(err.message || 'Contraseña incorrecta o expirada.');
+      setError(err.message || 'Contraseña incorrecta.');
     } finally {
       setLoading(false);
     }

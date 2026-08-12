@@ -4,7 +4,7 @@ import string
 import unicodedata
 import uuid
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from uuid import UUID
 
 import bcrypt
@@ -20,10 +20,6 @@ logger = logging.getLogger(__name__)
 
 VALID_PLANS = {"Boost", "Mentoría", "Advantage"}
 PASSWORD_ALPHABET = string.ascii_letters + string.digits
-
-
-def _utc_now() -> datetime:
-    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 def _generate_password() -> str:
@@ -107,7 +103,6 @@ class AdminServices:
         password_encrypted = encrypt_password(password)
         channel_slug = slugify_name(payload.name)
         now = datetime.now(timezone.utc).replace(tzinfo=None)
-        expires_at = now + timedelta(hours=48)
         session_id = uuid.uuid4()
 
         with db_session:
@@ -122,7 +117,7 @@ class AdminServices:
                 skool_used=False,
                 form_submitted=False,
                 created_at=now,
-                expires_at=expires_at,
+                expires_at=None,
             )
 
         onboarding_url = f"{ONBOARDING_FRONTEND_URL}/"
@@ -133,7 +128,6 @@ class AdminServices:
                 name=payload.name,
                 password=password,
                 plan=payload.plan,
-                expires_at=expires_at,
                 onboarding_url=onboarding_url,
             )
         except Exception:
@@ -144,7 +138,7 @@ class AdminServices:
         return schemas.AddClientResponse(
             session_id=str(session_id),
             password=password,
-            expires_at=expires_at.isoformat(),
+            expires_at=None,
             name=payload.name,
             email=payload.email,
             plan=payload.plan,
@@ -295,12 +289,10 @@ class AdminServices:
                 )
 
             password = _generate_password()
-            now = _utc_now()
-            expires_at = now + timedelta(hours=48)
 
             session.password_hash = _hash_password(password)
             session.password_encrypted = encrypt_password(password)
-            session.expires_at = expires_at
+            session.expires_at = None
             session.used = False
 
             client_email = session.client_email
@@ -314,7 +306,6 @@ class AdminServices:
                 name=client_name,
                 password=password,
                 plan=plan,
-                expires_at=expires_at,
                 onboarding_url=f"{ONBOARDING_FRONTEND_URL}/",
             )
             email_sent = True
@@ -326,7 +317,7 @@ class AdminServices:
         return schemas.ResendAccessResponse(
             session_id=str(session_id),
             password=password,
-            expires_at=expires_at,
+            expires_at=None,
             email_sent=email_sent,
         )
 

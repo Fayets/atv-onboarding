@@ -1,6 +1,6 @@
 import logging
 import smtplib
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -24,8 +24,6 @@ LOGO_PATH = (
 )
 CONTACT_EMAIL = "aumentatuvalorx@gmail.com"
 
-ARGENTINA_TZ = timezone(timedelta(hours=-3))
-
 
 def _smtp_configured() -> bool:
     return bool(SMTP_HOST and SMTP_USER and SMTP_PASSWORD and SMTP_FROM)
@@ -47,21 +45,10 @@ print(f"  ONBOARDING_FRONTEND_URL={ONBOARDING_FRONTEND_URL!r}")
 print(f"  _smtp_configured()={_smtp_configured()}")
 
 
-def _format_expires_at(expires_at: datetime) -> str:
-    if expires_at.tzinfo is None:
-        expires_utc = expires_at.replace(tzinfo=timezone.utc)
-    else:
-        expires_utc = expires_at.astimezone(timezone.utc)
-
-    expires_ar = expires_utc.astimezone(ARGENTINA_TZ)
-    return f"{expires_ar.strftime('%d/%m/%Y %H:%M')} (hora de Argentina)"
-
-
 def _build_html(
     name: str,
     password: str,
     plan: str,
-    expires_at: datetime,
     onboarding_url: str,
     logo_cid: str | None,
 ) -> str:
@@ -70,7 +57,6 @@ def _build_html(
         if logo_cid
         else f'<p style="text-align:center;font-size:24px;font-weight:700;color:#e63946;margin:0 0 24px;">ATV</p>'
     )
-    expires_label = _format_expires_at(expires_at)
 
     return f"""<!DOCTYPE html>
 <html lang="es">
@@ -91,11 +77,10 @@ def _build_html(
                 Bienvenido a ATV, {name}
               </h1>
               <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:rgba(255,255,255,0.75);text-align:center;">
-                Tu acceso al onboarding ya está listo. Tenés <strong style="color:#ffffff;">48 horas</strong> para ingresar y completar el proceso antes de que expire tu acceso.
+                Tu acceso al onboarding ya está listo. Podés ingresar cuando quieras y completar el proceso a tu ritmo.
               </p>
               <p style="margin:0 0 24px;font-size:14px;line-height:1.6;color:rgba(255,255,255,0.55);text-align:center;">
-                Plan: <strong style="color:#ffffff;">{plan}</strong><br />
-                Vence el: <strong style="color:#ffffff;">{expires_label}</strong>
+                Plan: <strong style="color:#ffffff;">{plan}</strong>
               </p>
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                 <tr>
@@ -146,8 +131,8 @@ class EmailServices:
         name: str,
         password: str,
         plan: str,
-        expires_at: datetime,
         onboarding_url: str,
+        expires_at: datetime | None = None,
     ) -> None:
         if not _smtp_configured():
             logger.warning(
@@ -161,7 +146,6 @@ class EmailServices:
             name=name,
             password=password,
             plan=plan,
-            expires_at=expires_at,
             onboarding_url=onboarding_url,
             logo_cid=logo_cid if LOGO_PATH.is_file() else None,
         )

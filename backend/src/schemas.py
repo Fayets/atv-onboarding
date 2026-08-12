@@ -63,7 +63,7 @@ class AddClientRequest(BaseModel):
 class AddClientResponse(BaseModel):
     session_id: str
     password: str
-    expires_at: str
+    expires_at: str | None = None
     name: str
     email: str
     plan: str
@@ -138,7 +138,7 @@ class ResendAccessResponse(BaseModel):
     ok: bool = True
     session_id: str
     password: str
-    expires_at: datetime
+    expires_at: datetime | None = None
     email_sent: bool
 
 
