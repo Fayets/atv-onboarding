@@ -11,6 +11,7 @@ import {
   resendSessionAccess,
   updateSessionEstado,
 } from '../api/client';
+import { downloadAllFormFilesAsZip } from '../utils/formExport';
 
 const THEME_STORAGE_KEY = 'atv-dashboard-theme';
 
@@ -127,6 +128,8 @@ export default function DashboardPage() {
   const [formModalData, setFormModalData] = useState(null);
   const [formModalLoading, setFormModalLoading] = useState(false);
   const [formModalError, setFormModalError] = useState('');
+  const [bulkPdfLoading, setBulkPdfLoading] = useState(false);
+  const [bulkPdfProgress, setBulkPdfProgress] = useState('');
 
   const loadDashboard = useCallback(async () => {
     setError('');
@@ -338,6 +341,60 @@ export default function DashboardPage() {
     setFormModalLoading(false);
   }
 
+  const completedFormSessions = useMemo(
+    () => sortedSessions.filter((session) => session.form_submitted),
+    [sortedSessions],
+  );
+
+  async function handleDownloadAllPdfs() {
+    if (bulkPdfLoading) return;
+
+    if (completedFormSessions.length === 0) {
+      setError('No hay formularios completados para descargar con los filtros actuales.');
+      return;
+    }
+
+    setBulkPdfLoading(true);
+    setBulkPdfProgress(`0/${completedFormSessions.length}`);
+    setError('');
+
+    try {
+      const formsData = [];
+
+      for (let index = 0; index < completedFormSessions.length; index += 1) {
+        const session = completedFormSessions[index];
+        setBulkPdfProgress(`${index + 1}/${completedFormSessions.length}`);
+
+        let formPayload = session.form_data;
+        let submittedAt = session.form_submitted_at;
+
+        if (!formPayload || typeof formPayload !== 'object') {
+          const fetched = await getSessionForm(session.id);
+          formPayload = fetched.form_data;
+          submittedAt = fetched.submitted_at || submittedAt;
+        }
+
+        formsData.push({
+          client_name: session.client_name,
+          client_email: session.client_email,
+          plan: session.plan,
+          submitted_at: submittedAt,
+          form_data: formPayload,
+        });
+      }
+
+      const result = await downloadAllFormFilesAsZip(formsData, {
+        onProgress: (done, total) => setBulkPdfProgress(`${done}/${total}`),
+      });
+      setBulkPdfProgress(`${result.count} listos`);
+    } catch (err) {
+      setError(err.message || 'No se pudieron descargar los PDFs.');
+      setBulkPdfProgress('');
+    } finally {
+      setBulkPdfLoading(false);
+    }
+  }
+
   if (!loading && unauthorized) {
     return (
       <Layout title="Dashboard — ATV" fullScreen>
@@ -398,6 +455,21 @@ export default function DashboardPage() {
               className="btn-secondary atv-module-action-btn dashboard-btn-secondary"
             >
               Métricas
+            </button>
+            <button
+              type="button"
+              onClick={handleDownloadAllPdfs}
+              disabled={bulkPdfLoading || completedFormSessions.length === 0}
+              className="btn-secondary atv-module-action-btn dashboard-btn-secondary disabled:opacity-50"
+              title={
+                completedFormSessions.length === 0
+                  ? 'No hay formularios completados en la vista actual'
+                  : `Descargar ${completedFormSessions.length} PDF(s) en un ZIP`
+              }
+            >
+              {bulkPdfLoading
+                ? `Generando ${bulkPdfProgress}...`
+                : `Descargar PDFs (${completedFormSessions.length})`}
             </button>
             <button
               type="button"

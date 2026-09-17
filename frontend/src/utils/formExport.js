@@ -344,26 +344,27 @@ async function createPdfBlob(docDefinition) {
   return pdfMake.createPdf(docDefinition).getBlob();
 }
 
-export async function downloadFormFile(data) {
-  const filename = `formulario-${slugifyFilename(data?.client_name)}.pdf`;
-
+export async function createFormPdfBlob(data) {
   try {
     const docDefinition = await buildFormPdfDefinition(data, { includeLogo: true });
-    const blob = await createPdfBlob(docDefinition);
-    triggerBrowserDownload(blob, filename);
-    return;
+    return await createPdfBlob(docDefinition);
   } catch (error) {
     console.error('Error al generar PDF con logo:', error);
   }
 
   try {
     const docDefinition = await buildFormPdfDefinition(data, { includeLogo: false });
-    const blob = await createPdfBlob(docDefinition);
-    triggerBrowserDownload(blob, filename);
+    return await createPdfBlob(docDefinition);
   } catch (error) {
     console.error('Error al generar PDF:', error);
     throw new Error('No se pudo generar el PDF.');
   }
+}
+
+export async function downloadFormFile(data) {
+  const filename = `formulario-${slugifyFilename(data?.client_name)}.pdf`;
+  const blob = await createFormPdfBlob(data);
+  triggerBrowserDownload(blob, filename);
 }
 
 /** Exporta respuestas del borrador local (cliente aún no envió al servidor). */
@@ -375,4 +376,54 @@ export async function downloadDraftFormFile({ clientName, clientEmail, plan, for
     form_data: formData,
     is_draft: true,
   });
+}
+
+function uniquePdfFilename(clientName, usedNames) {
+  const base = `formulario-${slugifyFilename(clientName)}.pdf`;
+  if (!usedNames.has(base)) {
+    usedNames.add(base);
+    return base;
+  }
+
+  let index = 2;
+  let candidate = `formulario-${slugifyFilename(clientName)}-${index}.pdf`;
+  while (usedNames.has(candidate)) {
+    index += 1;
+    candidate = `formulario-${slugifyFilename(clientName)}-${index}.pdf`;
+  }
+  usedNames.add(candidate);
+  return candidate;
+}
+
+/**
+ * Descarga un ZIP con un PDF por formulario.
+ * @param {Array<object>} formsData lista en el mismo formato que downloadFormFile
+ * @param {{ filename?: string, onProgress?: (done: number, total: number) => void }} [options]
+ */
+export async function downloadAllFormFilesAsZip(formsData, options = {}) {
+  const forms = Array.isArray(formsData) ? formsData.filter(Boolean) : [];
+  if (forms.length === 0) {
+    throw new Error('No hay formularios completados para descargar.');
+  }
+
+  const { default: JSZip } = await import('jszip');
+  const zip = new JSZip();
+  const usedNames = new Set();
+  const onProgress = typeof options.onProgress === 'function' ? options.onProgress : null;
+
+  for (let index = 0; index < forms.length; index += 1) {
+    const data = forms[index];
+    const blob = await createFormPdfBlob(data);
+    const filename = uniquePdfFilename(data?.client_name, usedNames);
+    zip.file(filename, blob);
+    onProgress?.(index + 1, forms.length);
+  }
+
+  const zipBlob = await zip.generateAsync({ type: 'blob' });
+  const zipName =
+    options.filename ||
+    `onboarding-formularios-${new Date().toISOString().slice(0, 10)}.zip`;
+  triggerBrowserDownload(zipBlob, zipName);
+
+  return { count: forms.length, filename: zipName };
 }
