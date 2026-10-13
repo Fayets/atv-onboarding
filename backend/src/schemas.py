@@ -17,10 +17,25 @@ class FormSubmitRequest(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
+class ContractResponse(BaseModel):
+    required: bool = False
+    status: Literal["none", "pending", "signed"] = "none"
+    kind: str | None = None
+    label: str | None = None
+    plan: str | None = None
+    payment_mode: str | None = None
+    sign_url: str | None = None
+    created_at: datetime | None = None
+    signed_at: datetime | None = None
+    has_pdf: bool = False
+
+
 class SessionResponse(BaseModel):
     id: UUID
     client_name: str | None = None
     client_email: str | None = None
+    plan: str | None = None
+    contract: ContractResponse = ContractResponse()
     skool_used: bool
     form_submitted: bool
     discord_url: str | None = None
@@ -57,7 +72,8 @@ class HealthDbResponse(BaseModel):
 class AddClientRequest(BaseModel):
     name: str = Field(min_length=1)
     email: EmailStr
-    plan: Literal["Boost", "Mentoría", "Advantage"]
+    plan: Literal["Entry Level", "Mid Level", "High Level", "Boost", "Mentoría"]
+    payment_mode: Literal["Pago único", "Dos cuotas", "Tres cuotas"] | None = None
 
 
 class AddClientResponse(BaseModel):
@@ -122,6 +138,10 @@ class DashboardSessionItem(BaseModel):
     estado_actual: EstadoOnboarding
     has_access_password: bool
     form_data: FormSubmitRequest | None = None
+    contract_required: bool = False
+    contract_status: str = "none"
+    contract_signed_at: datetime | None = None
+    payment_mode: str | None = None
 
 
 class DashboardResponse(BaseModel):

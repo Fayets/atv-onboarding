@@ -66,6 +66,27 @@ export async function joinDiscord() {
   return parseResponse(res);
 }
 
+export async function getContract() {
+  const res = await fetch('/api/onboarding/contract', defaultOptions);
+  return parseResponse(res);
+}
+
+export async function startContract() {
+  const res = await fetch('/api/onboarding/contract/start', {
+    ...defaultOptions,
+    method: 'POST',
+  });
+  return parseResponse(res);
+}
+
+export function contractPdfUrl() {
+  return '/api/onboarding/contract/pdf';
+}
+
+export function adminContractPdfUrl(sessionId) {
+  return `/api/admin/sessions/${sessionId}/contract-pdf`;
+}
+
 export async function getDashboard() {
   const res = await fetch('/api/admin/dashboard', defaultOptions);
   return parseResponse(res);

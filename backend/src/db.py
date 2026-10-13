@@ -36,6 +36,51 @@ MIGRATIONS = [
     ALTER TABLE onboarding.sessions
     ADD COLUMN IF NOT EXISTS password_encrypted TEXT;
     """,
+    # --- Contrato con ZapSign (paso "Firmá tu contrato") ---
+    """
+    ALTER TABLE onboarding.sessions
+    ADD COLUMN IF NOT EXISTS contract_required BOOLEAN DEFAULT FALSE;
+    """,
+    """
+    ALTER TABLE onboarding.sessions
+    ADD COLUMN IF NOT EXISTS payment_mode TEXT;
+    """,
+    """
+    ALTER TABLE onboarding.sessions
+    ADD COLUMN IF NOT EXISTS contract_kind TEXT;
+    """,
+    """
+    ALTER TABLE onboarding.sessions
+    ADD COLUMN IF NOT EXISTS contract_status TEXT DEFAULT 'none';
+    """,
+    """
+    ALTER TABLE onboarding.sessions
+    ADD COLUMN IF NOT EXISTS contract_doc_token TEXT;
+    """,
+    """
+    ALTER TABLE onboarding.sessions
+    ADD COLUMN IF NOT EXISTS contract_signer_token TEXT;
+    """,
+    """
+    ALTER TABLE onboarding.sessions
+    ADD COLUMN IF NOT EXISTS contract_sign_url TEXT;
+    """,
+    """
+    ALTER TABLE onboarding.sessions
+    ADD COLUMN IF NOT EXISTS contract_created_at TIMESTAMP;
+    """,
+    """
+    ALTER TABLE onboarding.sessions
+    ADD COLUMN IF NOT EXISTS contract_signed_at TIMESTAMP;
+    """,
+    """
+    ALTER TABLE onboarding.sessions
+    ADD COLUMN IF NOT EXISTS contract_last_check_at TIMESTAMP;
+    """,
+    """
+    ALTER TABLE onboarding.sessions
+    ADD COLUMN IF NOT EXISTS contract_signed_pdf BYTEA;
+    """,
 ]
 
 

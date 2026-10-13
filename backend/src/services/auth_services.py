@@ -7,6 +7,7 @@ from fastapi import HTTPException
 from pony.orm import db_session
 
 from src import schemas
+from src.services.contract_services import _to_response as contract_to_response
 from src.models import OnboardingSession
 
 DISCORD_INVITE_URL = config("DISCORD_INVITE_URL", default="")
@@ -71,6 +72,8 @@ class AuthServices:
                 id=session.id,
                 client_name=session.client_name,
                 client_email=session.client_email,
+                plan=session.plan,
+                contract=contract_to_response(session),
                 skool_used=session.skool_used,
                 form_submitted=session.form_submitted,
                 discord_url=DISCORD_INVITE_URL or None,

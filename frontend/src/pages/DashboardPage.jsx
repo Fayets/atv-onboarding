@@ -12,10 +12,42 @@ import {
   updateSessionEstado,
 } from '../api/client';
 import { downloadAllFormFilesAsZip } from '../utils/formExport';
+import { LEGACY_PLANS, PLANS } from '../constants/plans';
+import { adminContractPdfUrl } from '../api/client';
 
 const THEME_STORAGE_KEY = 'atv-dashboard-theme';
 
-const PLAN_OPTIONS = ['Todos', 'Boost', 'Mentoría', 'Advantage'];
+const PLAN_OPTIONS = ['Todos', ...PLANS, ...LEGACY_PLANS];
+
+const CONTRACT_BADGE = {
+  signed: { label: 'Firmado', className: 'dashboard-contract-badge dashboard-contract-badge--signed' },
+  pending: { label: 'Esperando firma', className: 'dashboard-contract-badge dashboard-contract-badge--pending' },
+  none: { label: 'Sin abrir', className: 'dashboard-contract-badge' },
+};
+
+function ContractCell({ session }) {
+  if (!session.contract_required) {
+    return <span className="dashboard-contract-badge" title="Alta anterior a la firma en el onboarding">Sin contrato</span>;
+  }
+  const badge = CONTRACT_BADGE[session.contract_status] || CONTRACT_BADGE.none;
+  const signedAt = session.contract_status === 'signed' ? formatDate(session.contract_signed_at) : null;
+  return (
+    <div className="flex flex-col gap-1 items-start">
+      <span className={badge.className} title={session.payment_mode ? `Pago: ${session.payment_mode}` : undefined}>{badge.label}</span>
+      {signedAt && (
+        <a
+          href={adminContractPdfUrl(session.id)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[11.5px] font-medium text-[#e63946] no-underline hover:opacity-70"
+          title={`Firmado el ${signedAt}`}
+        >
+          PDF firmado ↓
+        </a>
+      )}
+    </div>
+  );
+}
 const ESTADO_OPTIONS = [
   { value: 'todos', label: 'Todos' },
   { value: 'enviado', label: 'Enviado' },
@@ -538,7 +570,7 @@ export default function DashboardPage() {
               ) : (
                 <div className="overflow-x-auto min-h-0">
                   <table className="w-full min-w-[980px] border-collapse">
-                    <thead className="dashboard-thead sticky top-0 z-[1] backdrop-blur-sm">
+                    <thead className="dashboard-thead sticky top-0 z-[1]">
                       <tr className="dashboard-row">
                         <th className="dashboard-th text-left text-[11px] uppercase tracking-[0.08em] font-semibold py-2.5 px-3">
                           Cliente
@@ -548,6 +580,9 @@ export default function DashboardPage() {
                         </th>
                         <th className="dashboard-th text-left text-[11px] uppercase tracking-[0.08em] font-semibold py-2.5 px-3">
                           Plan
+                        </th>
+                        <th className="dashboard-th text-left text-[11px] uppercase tracking-[0.08em] font-semibold py-2.5 px-3">
+                          Contrato
                         </th>
                         <th className="dashboard-th text-left text-[11px] uppercase tracking-[0.08em] font-semibold py-2.5 px-3">
                           Estado
@@ -596,6 +631,9 @@ export default function DashboardPage() {
                             </td>
                             <td className="py-2.5 px-3 text-[13px] dashboard-text">
                               {session.plan || '—'}
+                            </td>
+                            <td className="py-2.5 px-3 text-[13px] whitespace-nowrap">
+                              <ContractCell session={session} />
                             </td>
                             <td className="py-2.5 px-3 min-w-[180px]">
                               <select

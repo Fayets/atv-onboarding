@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout, { LOGO_URL } from '../components/Layout';
+import ContractStep from '../components/ContractStep';
 import OnboardingForm from '../components/OnboardingForm';
 import SeekConfirmModal from '../components/SeekConfirmModal';
 import { STEPS } from '../constants/steps';
@@ -25,6 +26,11 @@ export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [videoCompleted, setVideoCompleted] = useState(false);
   const [client, setClient] = useState(null);
+  const contract = client?.contract || null;
+  const contractDone = !contract?.required || contract?.status === 'signed';
+  const handleContractChange = useCallback((data) => {
+    setClient((prev) => (prev ? { ...prev, contract: data } : prev));
+  }, []);
   const [loading, setLoading] = useState(true);
   const [skoolLoading, setSkoolLoading] = useState(false);
   const [skoolMessage, setSkoolMessage] = useState('');
@@ -35,19 +41,20 @@ export default function OnboardingPage() {
   const goToStep = useCallback(
     (n) => {
       if (n === currentStep) return;
-      if (n >= 5 && !videoCompleted) return;
+      if (n >= 3 && !contractDone) return;
+      if (n >= 6 && !videoCompleted) return;
       setCurrentStep(n);
-      if (n === 4) {
+      if (n === 5) {
         setTimeout(() => {
           initVimeoPlayer(() => setVideoCompleted(true));
         }, 100);
       }
     },
-    [currentStep, videoCompleted],
+    [currentStep, videoCompleted, contractDone],
   );
 
   useEffect(() => {
-    if (currentStep !== 4) return undefined;
+    if (currentStep !== 5) return undefined;
 
     const timer = setTimeout(() => {
       initVimeoPlayer(() => setVideoCompleted(true));
@@ -174,7 +181,7 @@ export default function OnboardingPage() {
 
   const currentStepData = STEPS[currentStep - 1];
 
-  const stepLocked = (stepId) => stepId >= 5 && !videoCompleted;
+  const stepLocked = (stepId) => (stepId >= 3 && !contractDone) || (stepId >= 6 && !videoCompleted);
 
   return (
     <Layout fullScreen>
@@ -287,8 +294,20 @@ export default function OnboardingPage() {
             </div>
           </div>
 
-          {/* Panel 2 */}
+          {/* Panel 2 - Contrato */}
           <div data-panel="2" className={`panel absolute inset-0 items-center justify-center panel-padding overflow-y-auto ${currentStep === 2 ? 'active' : ''}`}>
+            <ContractStep
+              contract={contract}
+              clientName={client?.client_name}
+              clientEmail={client?.client_email}
+              onContractChange={handleContractChange}
+              onPrevious={() => goToStep(1)}
+              onContinue={() => goToStep(3)}
+            />
+          </div>
+
+          {/* Panel 3 */}
+          <div data-panel="3" className={`panel absolute inset-0 items-center justify-center panel-padding overflow-y-auto ${currentStep === 3 ? 'active' : ''}`}>
             <div className="panel-inner flex flex-col">
               <h1 className="text-[24px] md:text-[30px] font-bold tracking-[-0.03em] text-white mb-[0.6rem] leading-[1.2]">Cómo trabajamos</h1>
               <p className="text-[15px] text-[rgba(255,255,255,0.45)] mb-9 leading-[1.55] tracking-[-0.01em]">Un proceso claro, estructurado y orientado a resultados.</p>
@@ -307,14 +326,14 @@ export default function OnboardingPage() {
                 ))}
               </div>
               <div className="flex gap-[10px] items-stretch mt-7">
-                <button type="button" className="btn-secondary flex items-center rounded-lg px-5 py-[0.8rem] text-[14.5px] font-sans tracking-[-0.01em] cursor-pointer whitespace-nowrap border-0" onClick={() => goToStep(1)}>← Anterior</button>
-                <button type="button" className="btn-primary flex flex-1 items-center justify-center rounded-lg px-6 py-[0.85rem] text-[15px] font-semibold font-sans tracking-[-0.01em] cursor-pointer border-0 text-white" onClick={() => goToStep(3)}>Siguiente</button>
+                <button type="button" className="btn-secondary flex items-center rounded-lg px-5 py-[0.8rem] text-[14.5px] font-sans tracking-[-0.01em] cursor-pointer whitespace-nowrap border-0" onClick={() => goToStep(2)}>← Anterior</button>
+                <button type="button" className="btn-primary flex flex-1 items-center justify-center rounded-lg px-6 py-[0.85rem] text-[15px] font-semibold font-sans tracking-[-0.01em] cursor-pointer border-0 text-white" onClick={() => goToStep(4)}>Siguiente</button>
               </div>
             </div>
           </div>
 
-          {/* Panel 3 - Recursos */}
-          <div data-panel="3" className={`panel absolute inset-0 items-center justify-center panel-padding overflow-y-auto ${currentStep === 3 ? 'active' : ''}`}>
+          {/* Panel 4 - Recursos */}
+          <div data-panel="4" className={`panel absolute inset-0 items-center justify-center panel-padding overflow-y-auto ${currentStep === 4 ? 'active' : ''}`}>
             <div className="panel-inner flex flex-col">
               <h1 className="text-[24px] md:text-[30px] font-bold tracking-[-0.03em] text-white mb-[0.6rem] leading-[1.2]">Tus recursos</h1>
               <p className="text-[15px] text-[rgba(255,255,255,0.45)] mb-9 leading-[1.55] tracking-[-0.01em]">Dos plataformas, una comunidad.</p>
@@ -369,14 +388,14 @@ export default function OnboardingPage() {
                 </div>
               </div>
               <div className="flex gap-[10px] items-stretch mt-7">
-                <button type="button" className="btn-secondary flex items-center rounded-lg px-5 py-[0.8rem] text-[14.5px] font-sans tracking-[-0.01em] cursor-pointer whitespace-nowrap border-0" onClick={() => goToStep(2)}>← Anterior</button>
-                <button type="button" className="btn-primary flex flex-1 items-center justify-center rounded-lg px-6 py-[0.85rem] text-[15px] font-semibold font-sans tracking-[-0.01em] cursor-pointer border-0 text-white" onClick={() => goToStep(4)}>Siguiente</button>
+                <button type="button" className="btn-secondary flex items-center rounded-lg px-5 py-[0.8rem] text-[14.5px] font-sans tracking-[-0.01em] cursor-pointer whitespace-nowrap border-0" onClick={() => goToStep(3)}>← Anterior</button>
+                <button type="button" className="btn-primary flex flex-1 items-center justify-center rounded-lg px-6 py-[0.85rem] text-[15px] font-semibold font-sans tracking-[-0.01em] cursor-pointer border-0 text-white" onClick={() => goToStep(5)}>Siguiente</button>
               </div>
             </div>
           </div>
 
-          {/* Panel 4 - Video */}
-          <div data-panel="4" className={`panel absolute inset-0 items-center justify-center panel-padding overflow-y-auto ${currentStep === 4 ? 'active' : ''}`}>
+          {/* Panel 5 - Video */}
+          <div data-panel="5" className={`panel absolute inset-0 items-center justify-center panel-padding overflow-y-auto ${currentStep === 5 ? 'active' : ''}`}>
             <div className="panel-inner flex flex-col">
               <h1 className="text-[24px] md:text-[30px] font-bold tracking-[-0.03em] text-white mb-[0.6rem] leading-[1.2]">Video de bienvenida</h1>
               <p className="text-[15px] text-[rgba(255,255,255,0.45)] mb-9 leading-[1.55] tracking-[-0.01em]">Un mensaje personal antes de arrancar.</p>
@@ -447,12 +466,12 @@ export default function OnboardingPage() {
                 </div>
               </div>
               <div className="flex gap-[10px] items-stretch mt-7">
-                <button type="button" className="btn-secondary flex items-center rounded-lg px-5 py-[0.8rem] text-[14.5px] font-sans tracking-[-0.01em] cursor-pointer whitespace-nowrap border-0" onClick={() => goToStep(3)}>← Anterior</button>
+                <button type="button" className="btn-secondary flex items-center rounded-lg px-5 py-[0.8rem] text-[14.5px] font-sans tracking-[-0.01em] cursor-pointer whitespace-nowrap border-0" onClick={() => goToStep(4)}>← Anterior</button>
                 <button
                   type="button"
                   id="btn-siguiente-video"
                   disabled={!videoCompleted}
-                  onClick={() => goToStep(5)}
+                  onClick={() => goToStep(6)}
                   className={`btn-primary cursor-pointer flex flex-1 items-center justify-center rounded-lg px-6 py-[0.85rem] text-[15px] font-semibold font-sans tracking-[-0.01em] border-0 text-white ${!videoCompleted ? 'opacity-30 cursor-not-allowed' : ''}`}
                 >
                   {videoCompleted ? 'Siguiente →' : 'Siguiente — Completá el video primero'}
@@ -461,8 +480,8 @@ export default function OnboardingPage() {
             </div>
           </div>
 
-          {/* Panel 5 - Formulario */}
-          <div data-panel="5" className={`panel absolute inset-0 items-start justify-center panel-padding overflow-y-auto ${currentStep === 5 ? 'active' : ''}`}>
+          {/* Panel 6 - Formulario */}
+          <div data-panel="6" className={`panel absolute inset-0 items-start justify-center panel-padding overflow-y-auto ${currentStep === 6 ? 'active' : ''}`}>
             <div className="panel-inner-wide flex flex-col">
               <OnboardingForm
                 readOnly={Boolean(client?.form_submitted)}
@@ -470,14 +489,14 @@ export default function OnboardingPage() {
                 clientName={client?.client_name}
                 clientEmail={client?.client_email}
                 onSubmitted={handleFormSubmitted}
-                onPrevious={() => goToStep(4)}
-                onContinue={() => goToStep(6)}
+                onPrevious={() => goToStep(5)}
+                onContinue={() => goToStep(7)}
               />
             </div>
           </div>
 
-          {/* Panel 6 - Éxito */}
-          <div data-panel="6" className={`panel absolute inset-0 items-center justify-center panel-padding overflow-y-auto ${currentStep === 6 ? 'active' : ''}`}>
+          {/* Panel 7 - Éxito */}
+          <div data-panel="7" className={`panel absolute inset-0 items-center justify-center panel-padding overflow-y-auto ${currentStep === 7 ? 'active' : ''}`}>
             <div className="panel-inner flex flex-col items-center text-center">
               <div className="w-[68px] h-[68px] rounded-2xl flex items-center justify-center mb-7 bg-[rgba(230,57,70,0.12)] border border-[rgba(230,57,70,0.3)]" style={{ boxShadow: '0 0 30px rgba(230, 57, 70, 0.2)' }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="#e63946" strokeWidth="1.5" width="26" height="26">

@@ -470,9 +470,11 @@ const BLOCKS = [
         type: 'radio',
         label: '¿Qué programa compraste?',
         options: [
-          { key: 'a', label: 'Mentoría' },
-          { key: 'b', label: 'Advantage' },
-          { key: 'c', label: 'Boost' },
+          { key: 'a', label: 'Entry Level' },
+          { key: 'b', label: 'Mid Level' },
+          { key: 'c', label: 'High Level' },
+          { key: 'd', label: 'Boost' },
+          { key: 'e', label: 'Mentoría' },
         ],
       },
       {

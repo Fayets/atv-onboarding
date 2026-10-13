@@ -44,12 +44,15 @@
   transform: translate(-50%, -52%);
   pointer-events: none;
   z-index: 0;
+  /* El degradado ya es suave: el filter: blur(52px) que tenía obligaba a recomponer
+     una capa enorme en cada repintado de la página. */
   background: radial-gradient(
     ellipse 70% 60% at 50% 50%,
-    rgba(70, 32, 32, 0.42) 0%,
+    rgba(70, 32, 32, 0.36) 0%,
+    rgba(70, 32, 32, 0.12) 45%,
     transparent 72%
   );
-  filter: blur(52px);
+  will-change: transform;
 }
 
 .atv-page__glow--login {
@@ -516,8 +519,9 @@
   inset: 0;
   border: 0;
   cursor: default;
-  background: rgba(0, 0, 0, 0.84);
-  backdrop-filter: blur(6px);
+  /* Sin backdrop-filter: desenfocar toda la tabla de fondo en cada scroll del modal
+     trababa el dashboard. El oscurecido solo ya separa el modal. */
+  background: rgba(0, 0, 0, 0.88);
 }
 
 .atv-modal-panel {
@@ -589,7 +593,7 @@
 }
 
 .atv-modal-backdrop[data-theme='light'] .atv-modal-overlay {
-  background: rgba(17, 24, 39, 0.55);
+  background: rgba(17, 24, 39, 0.6);
 }
 
 .atv-modal-backdrop[data-theme='light'] .atv-modal-panel {

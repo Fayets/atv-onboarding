@@ -27,6 +27,18 @@ class OnboardingSession(db.Entity):
     discord_invite_url = Optional(str)
     discord_invite_used = Required(bool, default=False)
     role_assigned = Required(bool, default=False)
+    # Contrato con ZapSign
+    contract_required = Required(bool, default=False)
+    payment_mode = Optional(str)
+    contract_kind = Optional(str)
+    contract_status = Optional(str, default="none")  # none | pending | signed
+    contract_doc_token = Optional(str)
+    contract_signer_token = Optional(str)
+    contract_sign_url = Optional(str)
+    contract_created_at = Optional(datetime)
+    contract_signed_at = Optional(datetime)
+    contract_last_check_at = Optional(datetime)
+    contract_signed_pdf = Optional(bytes)
     forms = Set("OnboardingForm")
 
 
