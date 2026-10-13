@@ -5,7 +5,7 @@ import ContractStep from '../components/ContractStep';
 import OnboardingForm from '../components/OnboardingForm';
 import SeekConfirmModal from '../components/SeekConfirmModal';
 import { STEPS } from '../constants/steps';
-import { getSession, joinDiscord, joinSkool } from '../api/client';
+import { getSession, joinDiscord, openClassroom } from '../api/client';
 import {
   demoUnlock,
   initVideoState,
@@ -32,8 +32,6 @@ export default function OnboardingPage() {
     setClient((prev) => (prev ? { ...prev, contract: data } : prev));
   }, []);
   const [loading, setLoading] = useState(true);
-  const [skoolLoading, setSkoolLoading] = useState(false);
-  const [skoolMessage, setSkoolMessage] = useState('');
   const [discordLoading, setDiscordLoading] = useState(false);
   const [seekModalOpen, setSeekModalOpen] = useState(false);
   const seekConfirmRef = useRef(null);
@@ -119,18 +117,11 @@ export default function OnboardingPage() {
     }
   }
 
-  async function handleJoinSkool() {
-    setSkoolLoading(true);
-    setSkoolMessage('Enviando invitación...');
-
-    try {
-      await joinSkool();
-      setClient((prev) => ({ ...prev, skool_used: true }));
-      setSkoolMessage('✅ Invitación enviada — revisá tu mail');
-    } catch {
-      setSkoolMessage('Error, intentá de nuevo');
-      setSkoolLoading(false);
-    }
+  // Skool ya no se usa: el cliente entra al classroom con su mail y la clave de su canal.
+  function handleOpenClassroom() {
+    openClassroom()
+      .then(() => setClient((prev) => ({ ...prev, skool_used: true })))
+      .catch(() => null);
   }
 
   async function handleJoinDiscord() {
@@ -336,7 +327,7 @@ export default function OnboardingPage() {
           <div data-panel="4" className={`panel absolute inset-0 items-center justify-center panel-padding overflow-y-auto ${currentStep === 4 ? 'active' : ''}`}>
             <div className="panel-inner flex flex-col">
               <h1 className="text-[24px] md:text-[30px] font-bold tracking-[-0.03em] text-white mb-[0.6rem] leading-[1.2]">Tus recursos</h1>
-              <p className="text-[15px] text-[rgba(255,255,255,0.45)] mb-9 leading-[1.55] tracking-[-0.01em]">Dos plataformas, una comunidad.</p>
+              <p className="text-[15px] text-[rgba(255,255,255,0.45)] mb-9 leading-[1.55] tracking-[-0.01em]">Tu espacio de trabajo con ATV y la comunidad.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-7">
                 <div className={`glass-card px-[1.35rem] py-6 flex flex-col gap-[11px] ${client?.discord_invite_used ? 'opacity-30 cursor-default' : 'opacity-100'}`}>
                   <div className="w-11 h-11 rounded-[10px] flex items-center justify-center bg-[rgba(88,101,242,0.15)] border border-[rgba(88,101,242,0.25)]">
@@ -361,30 +352,30 @@ export default function OnboardingPage() {
                     <span className="text-[13px] text-[rgba(255,255,255,0.3)]">Link de Discord no configurado</span>
                   )}
                 </div>
-                <div className={`glass-card justify-start items-start px-[1.35rem] py-6 flex flex-col gap-[11px] ${client?.skool_used ? 'opacity-30 cursor-default' : 'opacity-100'}`}>
+                <div className={`glass-card justify-start items-start px-[1.35rem] py-6 flex flex-col gap-[11px] sm:order-first`}>
                   <div className="w-11 h-11 rounded-[10px] flex items-center justify-center bg-[rgba(230,57,70,0.12)] border border-[rgba(230,57,70,0.25)]">
                     <svg viewBox="0 0 24 24" fill="none" stroke="#e63946" strokeWidth="1.75" width="20" height="20">
                       <path d="M12 14l9-5-9-5-9 5 9 5z" strokeLinecap="round" strokeLinejoin="round" />
                       <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </div>
-                  <h3 className="text-[14.5px] font-semibold tracking-[-0.02em] text-white">Skool</h3>
-                  <p className="text-[13px] text-[rgba(255,255,255,0.4)] leading-[1.65] flex-1">Accedé a todos los materiales del programa: módulos, recursos descargables y grabaciones.</p>
-                  {!client?.skool_used ? (
-                    <button
-                      id="join-skool-btn"
-                      type="button"
-                      disabled={skoolLoading}
-                      onClick={handleJoinSkool}
-                      className="text-[13px] disabled:cursor-not-allowed cursor-pointer font-medium text-[#e63946] no-underline tracking-[-0.01em] transition-opacity duration-150 hover:opacity-70 bg-transparent border-0 p-0 text-left"
-                    >
-                      {skoolMessage || 'Enviar invitación →'}
-                    </button>
-                  ) : (
-                    <span className="text-[13px] text-[rgba(255,255,255,0.4)] leading-[1.65] flex-1">
-                      Tu invitación <strong>ya ha sido enviada.</strong>
-                    </span>
-                  )}
+                  <h3 className="text-[14.5px] font-semibold tracking-[-0.02em] text-white">Classroom</h3>
+                  <p className="text-[13px] text-[rgba(255,255,255,0.4)] leading-[1.65]">Las clases, tu roadmap y el chat directo con tu coach. Es donde vas a trabajar con ATV.</p>
+                  {client?.classroom_usuario && client?.classroom_clave ? (
+                    <div className="w-full flex flex-col gap-[6px] text-[12.5px] text-[rgba(255,255,255,0.55)]">
+                      <span>Usuario: <strong className="text-white select-all">{client.classroom_usuario}</strong></span>
+                      <span>Clave: <strong className="text-white select-all">{client.classroom_clave}</strong></span>
+                    </div>
+                  ) : null}
+                  <a
+                    href={client?.classroom_url || 'https://classroom.atvos.io'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={handleOpenClassroom}
+                    className="text-[13px] cursor-pointer font-medium text-[#e63946] no-underline tracking-[-0.01em] transition-opacity duration-150 hover:opacity-70"
+                  >
+                    {client?.skool_used ? 'Abrir el classroom de nuevo →' : 'Entrar al classroom →'}
+                  </a>
                 </div>
               </div>
               <div className="flex gap-[10px] items-stretch mt-7">
@@ -508,8 +499,8 @@ export default function OnboardingPage() {
               <div className="flex flex-col gap-5 w-full max-w-[380px] mb-8 text-left">
                 {[
                   ['Uníte a Discord y presentáte', 'Decile al grupo quién sos y qué querés lograr.'],
-                  ['Explorá Skool', 'Revisá los materiales del módulo 1 antes de nuestra primera sesión.'],
-                  ['Agendá tu primera sesión', 'Coordinamos fecha y horario por Discord o por mail.'],
+                  ['Entrá al classroom', 'Revisá las clases de Start Here antes de nuestra primera sesión.'],
+                  ['Agendá tu primera sesión', 'Coordinamos fecha y horario por el chat del classroom.'],
                 ].map(([title, desc], i) => (
                   <div key={title} className="flex items-start gap-[14px]">
                     <span className="step-badge w-[26px] h-[26px] rounded-[7px] text-white text-[12px] font-bold flex items-center justify-center shrink-0 mt-[1px]">{i + 1}</span>

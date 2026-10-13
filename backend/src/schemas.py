@@ -42,6 +42,10 @@ class SessionResponse(BaseModel):
     discord_invite_url: str | None = None
     discord_invite_used: bool = False
     form_data: FormSubmitRequest | None = None
+    # Skool ya no se usa: las clases están en el classroom. skool_used pasa a significar "abrió el classroom".
+    classroom_url: str | None = None
+    classroom_usuario: str | None = None
+    classroom_clave: str | None = None
 
 
 class FormSubmitResponse(BaseModel):
@@ -74,6 +78,9 @@ class AddClientRequest(BaseModel):
     email: EmailStr
     plan: Literal["Entry Level", "Mid Level", "High Level", "Boost", "Mentoría"]
     payment_mode: Literal["Pago único", "Dos cuotas", "Tres cuotas"] | None = None
+
+    # El alta desde el classroom crea todo sin mandar el mail: se manda después, una vez, con un botón.
+    send_email: bool = True
 
 
 class AddClientResponse(BaseModel):

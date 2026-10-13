@@ -50,6 +50,12 @@ export async function submitForm(formData) {
   return parseResponse(res);
 }
 
+export async function openClassroom() {
+  const res = await fetch('/api/onboarding/open-classroom', { method: 'POST', credentials: 'include' });
+  if (!res.ok) throw new Error('No se pudo registrar.');
+  return res.json();
+}
+
 export async function joinSkool() {
   const res = await fetch('/api/onboarding/join-skool', {
     ...defaultOptions,

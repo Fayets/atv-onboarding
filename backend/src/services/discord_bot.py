@@ -38,6 +38,7 @@ _configure_discord_bot_logging()
 logger = logging.getLogger(__name__)
 logger.info("=== discord_bot.py cargado (pid=%s) ===", os.getpid())
 
+
 PLAN_CATEGORY_PATTERNS = DISCORD_CATEGORY_BY_PLAN
 PLAN_ROLE_NAMES = DISCORD_ROLE_BY_PLAN
 
@@ -113,7 +114,7 @@ def _build_welcome_script(name: str) -> str:
         "Entrá al link, iniciá sesión y recorré todos los pasos hasta el final:\n"
         "\n"
         "Bienvenida y cómo trabajamos\n"
-        "Unirte a Discord y activar tu invitación a Skool\n"
+        "Unirte a Discord y entrar al Classroom (clases, roadmap y chat con tu coach)\n"
         "Video de bienvenida (obligatorio verlo completo)\n"
         "Completar tu perfil (formulario)\n"
         "Revisar próximos pasos\n"
@@ -144,7 +145,7 @@ def _build_success_embed(
         title="ONBOARDING ENVIADO! ✅",
         description=(
             "El acceso fue creado y enviado correctamente. El cliente ya recibió su "
-            "correo con la contraseña y las invitaciones a Discord y Skool. La clave "
+            "correo con la contraseña, la invitación a Discord y su acceso al Classroom. La clave "
             "no vence: puede completar el onboarding cuando quiera."
         ),
         color=0xE63946,
@@ -589,8 +590,51 @@ def _build_bot(guild_id: int) -> ATVDiscordBot:
     return bot
 
 
+# El bot corre en su propio hilo y loop. Para que la API (alta desde el classroom) pueda crear o
+# borrar canales, se guarda el loop y se le mandan las tareas con run_coroutine_threadsafe.
+_LOOP: asyncio.AbstractEventLoop | None = None
+_BOT: Any = None
+_GUILD_ID: int | None = None
+
+
+def _en_el_bot(fabrica, timeout: float = 30):
+    if _LOOP is None or _BOT is None or not _BOT.is_ready():
+        raise RuntimeError("El bot de Discord no está conectado.")
+    return asyncio.run_coroutine_threadsafe(fabrica(), _LOOP).result(timeout)
+
+
+def crear_canal_cliente(slug: str, plan: str, nombre: str) -> tuple[str, str]:
+    """Lo mismo que hace /add-client en Discord: canal privado en la categoría del plan + invitación."""
+
+    async def crear():
+        guild = _BOT.get_guild(_GUILD_ID) or await _BOT.fetch_guild(_GUILD_ID)
+        category = _find_category(guild, plan)
+        if not category:
+            raise RuntimeError(f"No se encontró la categoría de Discord para el plan {plan}.")
+        canal = await guild.create_text_channel(
+            name=slug,
+            category=category,
+            overwrites=_channel_overwrites(guild, plan),
+            reason=f"Onboarding cliente {nombre} (alta desde el classroom)",
+        )
+        invite = await canal.create_invite(max_uses=1, max_age=172800, unique=True, reason=f"Invite onboarding {nombre}")
+        return str(canal.id), invite.url
+
+    return _en_el_bot(crear)
+
+
+def borrar_canal(channel_id: str) -> None:
+    async def borrar():
+        canal = _BOT.get_channel(int(channel_id)) or await _BOT.fetch_channel(int(channel_id))
+        await canal.delete(reason="Alta anulada desde el classroom")
+
+    _en_el_bot(borrar)
+
+
 async def _run_bot(token: str, guild_id: int) -> None:
+    global _LOOP, _BOT, _GUILD_ID
     bot = _build_bot(guild_id)
+    _LOOP, _BOT, _GUILD_ID = asyncio.get_running_loop(), bot, guild_id
     logger.info(
         "=== Discord bot arrancando (pid=%s, bot_id=%s, guild_id=%s) ===",
         os.getpid(),

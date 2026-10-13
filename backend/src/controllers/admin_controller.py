@@ -227,3 +227,37 @@ def get_session_contract_pdf(session_id: UUID, _: str = Depends(verify_ecosystem
         media_type="application/pdf",
         headers={"Content-Disposition": f'inline; filename="{filename}"'},
     )
+
+# ---------- Alta desde el classroom (con la clave de admin, como /add-client) ----------
+@router.post("/sessions/{session_id}/create-discord-channel")
+def create_discord_channel(session_id: UUID, _: str = Depends(verify_admin_key)):
+    try:
+        return service.create_discord_channel(session_id)
+    except HTTPException as e:
+        raise e
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=500, detail="No se pudo crear el canal de Discord.")
+
+
+@router.post("/sessions/{session_id}/send-onboarding-email")
+def send_onboarding_email(session_id: UUID, _: str = Depends(verify_admin_key)):
+    try:
+        return service.send_onboarding_email(session_id)
+    except HTTPException as e:
+        raise e
+    except Exception:
+        raise HTTPException(status_code=502, detail="No se pudo mandar el mail de onboarding.")
+
+
+@router.delete("/sessions/{session_id}/cancel")
+def cancel_client(session_id: UUID, _: str = Depends(verify_admin_key)):
+    try:
+        return service.cancel_client(session_id)
+    except HTTPException as e:
+        raise e
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=500, detail="No se pudo anular el alta.")

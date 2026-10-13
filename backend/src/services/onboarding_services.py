@@ -43,6 +43,15 @@ class OnboardingServices:
 
         return schemas.FormSubmitResponse()
 
+    def open_classroom(self, session_id: UUID) -> schemas.SkoolResponse:
+        """El cliente abrió el classroom desde el onboarding (reemplaza a la invitación de Skool)."""
+        with db_session:
+            session = OnboardingSession.get(id=session_id)
+            if not session:
+                raise HTTPException(status_code=401, detail="Sesión inválida")
+            session.skool_used = True
+        return schemas.SkoolResponse()
+
     async def join_skool(self, session_id: UUID) -> schemas.SkoolResponse:
         session_data = self._auth.get_session_by_id(session_id)
 
