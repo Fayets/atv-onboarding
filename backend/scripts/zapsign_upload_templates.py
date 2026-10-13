@@ -35,13 +35,13 @@ FORM_INPUTS = [
     {"variable": "{{CIUDAD}}", "label": "Ciudad", "input_type": "input", "required": True, "order": 3},
     {"variable": "{{PROVINCIA}}", "label": "Provincia o estado", "input_type": "input", "required": True, "order": 4},
     {"variable": "{{PAIS}}", "label": "País", "input_type": "input", "required": True, "order": 5},
-    {"variable": "{{NOMBRE_COMPLETO}}", "label": "Nombre completo", "input_type": "signer_fullname", "required": True, "order": 6},
-    {"variable": "{{EMAIL_CONTRATANTE}}", "label": "Tu email", "input_type": "email", "required": True, "order": 7},
-    {"variable": "{{DIA}}", "label": "Día de firma", "input_type": "input", "required": True, "order": 8},
-    {"variable": "{{MES}}", "label": "Mes de firma", "input_type": "input", "required": True, "order": 9},
-    {"variable": "{{ANIO}}", "label": "Año de firma", "input_type": "input", "required": True, "order": 10},
-    {"variable": "{{EMAIL_EMPRESA}}", "label": "Email de ATV", "input_type": "email", "required": True, "order": 11},
-    {"variable": "{{MODALIDAD_PAGO}}", "label": "Modalidad de pago", "input_type": "dropdown-list", "required": True, "order": 12,
+    {"variable": "{{NOMBRE_COMPLETO}}", "label": "Nombre completo (ya cargado por ATV)", "input_type": "signer_fullname", "required": True, "order": 6},
+    {"variable": "{{EMAIL_CONTRATANTE}}", "label": "Tu email (ya cargado por ATV)", "input_type": "email", "required": True, "order": 7},
+    {"variable": "{{DIA}}", "label": "Día de firma (ya cargado por ATV)", "input_type": "input", "required": True, "order": 8},
+    {"variable": "{{MES}}", "label": "Mes de firma (ya cargado por ATV)", "input_type": "input", "required": True, "order": 9},
+    {"variable": "{{ANIO}}", "label": "Año de firma (ya cargado por ATV)", "input_type": "input", "required": True, "order": 10},
+    {"variable": "{{EMAIL_EMPRESA}}", "label": "Email de ATV (ya cargado por ATV)", "input_type": "email", "required": True, "order": 11},
+    {"variable": "{{MODALIDAD_PAGO}}", "label": "Modalidad de pago (la pactada con tu closer)", "input_type": "dropdown-list", "required": True, "order": 12,
      "options": "Pago único;Dos cuotas;Tres cuotas"},
 ]
 
@@ -74,16 +74,25 @@ def main() -> int:
             return 1
 
         inputs = FORM_INPUTS if kind != "high" else [i for i in FORM_INPUTS if i["variable"] != "{{MODALIDAD_PAGO}}"]
-        print(f"Subiendo {filename} ...")
-        tpl = zs.create_template_docx(
-            name=CONTRACT_LABELS[kind],
-            docx_bytes=path.read_bytes(),
-            folder_path="/Onboarding ATV",
-            redirect_link=redirect,
+        # Si ya hay una plantilla DOCX con este nombre (corrida anterior a medias), se reutiliza.
+        previa = next(
+            (t for t in zs.list_templates() if t.get("name") == CONTRACT_LABELS[kind] and t.get("template_type") == "docx"),
+            None,
         )
-        token = tpl.get("token")
-        print(f"  plantilla creada: {token}")
-        print(f"  variables detectadas: {[i.get('variable') for i in tpl.get('inputs', [])]}")
+        if previa and not args.force:
+            token = previa["token"]
+            print(f"{CONTRACT_LABELS[kind]}: ya existe en ZapSign ({token}), configuro el formulario.")
+        else:
+            print(f"Subiendo {filename} ...")
+            tpl = zs.create_template_docx(
+                name=CONTRACT_LABELS[kind],
+                docx_bytes=path.read_bytes(),
+                folder_path="/Onboarding ATV",
+                redirect_link=redirect,
+            )
+            token = tpl.get("token")
+            print(f"  plantilla creada: {token}")
+            print(f"  variables detectadas: {[i.get('variable') for i in tpl.get('inputs', [])]}")
         zs.update_template_form(token, inputs)
         print("  formulario configurado")
         result[kind] = token

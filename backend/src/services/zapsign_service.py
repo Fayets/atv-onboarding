@@ -103,7 +103,12 @@ class ZapSignService:
         return self._request(
             "POST",
             "templates/update-form/",
-            json={"token": template_token, "inputs": inputs},
+            json={
+                "template_id": template_token,
+                "custom_intro": "Completá estos datos para generar tu contrato.",
+                "youtube_video_code": "",
+                "inputs": inputs,
+            },
         )
 
     def list_templates(self) -> list[dict]:
