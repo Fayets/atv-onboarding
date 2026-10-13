@@ -13,6 +13,17 @@ DISCORD_INVITE_URL = config("DISCORD_INVITE_URL", default="")
 SESSION_COOKIE_NAME = "atv_session"
 
 
+CLASSROOM_URL = config("CLASSROOM_URL", default="https://classroom.atvos.io")
+
+
+def _acceso_classroom(session) -> dict:
+    """Con qué entra al classroom: su mail y, de clave, el canal con puntos (#juan-perez → juan.perez)."""
+    from src.services.admin_services import slugify_name
+
+    clave = slugify_name(session.client_name).replace("-", ".") if session.client_name else None
+    return {"classroom_url": CLASSROOM_URL, "classroom_usuario": session.client_email, "classroom_clave": clave}
+
+
 class AuthServices:
     def login(self, password: str) -> UUID:
         if not password:
@@ -77,4 +88,5 @@ class AuthServices:
                 discord_invite_url=session.discord_invite_url,
                 discord_invite_used=session.discord_invite_used,
                 form_data=form_data,
+                **_acceso_classroom(session),
             )

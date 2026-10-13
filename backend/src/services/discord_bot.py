@@ -113,7 +113,7 @@ def _build_welcome_script(name: str) -> str:
         "Entrá al link, iniciá sesión y recorré todos los pasos hasta el final:\n"
         "\n"
         "Bienvenida y cómo trabajamos\n"
-        "Unirte a Discord y activar tu invitación a Skool\n"
+        "Unirte a Discord y entrar al Classroom (clases, roadmap y chat con tu coach)\n"
         "Video de bienvenida (obligatorio verlo completo)\n"
         "Completar tu perfil (formulario)\n"
         "Revisar próximos pasos\n"
@@ -143,7 +143,7 @@ def _build_success_embed(
         title="ONBOARDING ENVIADO! ✅",
         description=(
             "El acceso fue creado y enviado correctamente. El cliente ya recibió su "
-            "correo con la contraseña y las invitaciones a Discord y Skool. La clave "
+            "correo con la contraseña, la invitación a Discord y su acceso al Classroom. La clave "
             "no vence: puede completar el onboarding cuando quiera."
         ),
         color=0xE63946,

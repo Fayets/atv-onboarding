@@ -27,6 +27,10 @@ class SessionResponse(BaseModel):
     discord_invite_url: str | None = None
     discord_invite_used: bool = False
     form_data: FormSubmitRequest | None = None
+    # Skool ya no se usa: las clases están en el classroom. skool_used pasa a significar "abrió el classroom".
+    classroom_url: str | None = None
+    classroom_usuario: str | None = None
+    classroom_clave: str | None = None
 
 
 class FormSubmitResponse(BaseModel):

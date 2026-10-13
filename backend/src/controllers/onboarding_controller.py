@@ -25,6 +25,12 @@ def submit_form(payload: schemas.FormSubmitRequest, request: Request):
         )
 
 
+@router.post("/open-classroom", response_model=schemas.SkoolResponse)
+def open_classroom(request: Request):
+    session_id = auth_service.parse_session_id(request.cookies.get(SESSION_COOKIE_NAME))
+    return service.open_classroom(session_id)
+
+
 @router.post("/join-skool", response_model=schemas.SkoolResponse)
 async def join_skool(request: Request):
     try:
