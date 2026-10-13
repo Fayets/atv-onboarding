@@ -9,6 +9,8 @@ from typing import Any
 import discord
 import httpx
 from decouple import config
+
+from src.plans import DISCORD_CATEGORY_BY_PLAN, DISCORD_ROLE_BY_PLAN, PAYMENT_MODES, PLANS
 from discord import app_commands
 
 LOG_FORMAT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
@@ -36,7 +38,6 @@ _configure_discord_bot_logging()
 logger = logging.getLogger(__name__)
 logger.info("=== discord_bot.py cargado (pid=%s) ===", os.getpid())
 
-from src.plans import DISCORD_CATEGORY_BY_PLAN, DISCORD_ROLE_BY_PLAN, PLANS
 
 PLAN_CATEGORY_PATTERNS = DISCORD_CATEGORY_BY_PLAN
 PLAN_ROLE_NAMES = DISCORD_ROLE_BY_PLAN
@@ -138,6 +139,7 @@ def _build_success_embed(
     plan: str,
     password: str,
     expires_at: str | None = None,
+    payment_mode: str | None = None,
 ) -> tuple[discord.Embed, str | None]:
     embed = discord.Embed(
         title="ONBOARDING ENVIADO! ✅",
@@ -151,6 +153,8 @@ def _build_success_embed(
     embed.add_field(name="👤 Nombre", value=name, inline=True)
     embed.add_field(name="📧 Email", value=email, inline=True)
     embed.add_field(name="🎯 Plan", value=plan, inline=True)
+    if payment_mode:
+        embed.add_field(name="💳 Pago", value=payment_mode, inline=True)
     embed.add_field(name="🔑 Contraseña", value=password, inline=True)
     embed.add_field(
         name="📨 Fecha de envío",
@@ -435,17 +439,18 @@ def _build_bot(guild_id: int) -> ATVDiscordBot:
         name="Nombre del cliente",
         email="Email del cliente",
         plan="Plan contratado",
+        pago="Modalidad de pago pactada (va al contrato; High Level es siempre pago único)",
     )
     @app_commands.choices(
-        plan=[
-            *[app_commands.Choice(name=p, value=p) for p in PLANS],
-        ]
+        plan=[app_commands.Choice(name=p, value=p) for p in PLANS],
+        pago=[app_commands.Choice(name=m, value=m) for m in PAYMENT_MODES],
     )
     async def add_client(
         interaction: discord.Interaction,
         name: str,
         email: str,
         plan: app_commands.Choice[str],
+        pago: app_commands.Choice[str],
     ) -> None:
         logger.info(
             "=== /add-client INVOCADO === pid=%s bot_id=%s thread=%s user=%s channel=%s",
@@ -476,13 +481,19 @@ def _build_bot(guild_id: int) -> ATVDiscordBot:
         await interaction.response.defer()
 
         plan_value = plan.value
+        payment_mode = pago.value
 
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 create_resp = await client.post(
                     f"{api_base}/api/admin/add-client",
                     headers={"X-Admin-Key": admin_key},
-                    json={"name": name, "email": email, "plan": plan_value},
+                    json={
+                        "name": name,
+                        "email": email,
+                        "plan": plan_value,
+                        "payment_mode": payment_mode,
+                    },
                 )
                 if create_resp.status_code != 200:
                     detail = create_resp.json().get("detail", create_resp.text)
@@ -558,6 +569,7 @@ def _build_bot(guild_id: int) -> ATVDiscordBot:
                 plan=plan_value,
                 password=password,
                 expires_at=expires_at,
+                payment_mode=payment_mode,
             )
             await interaction.followup.send(embed=success_embed)
             if welcome_script_overflow:

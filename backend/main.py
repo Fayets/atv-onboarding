@@ -4,7 +4,13 @@ from decouple import config
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.controllers import admin_controller, auth_controller, health_controller, onboarding_controller
+from src.controllers import (
+    admin_controller,
+    auth_controller,
+    health_controller,
+    onboarding_controller,
+    zapsign_controller,
+)
 from src.db import init_db
 from src.schemas import HealthResponse
 from src.services.discord_bot import start_discord_bot_thread
@@ -37,6 +43,7 @@ app.include_router(auth_controller.router)
 app.include_router(onboarding_controller.router)
 app.include_router(health_controller.router)
 app.include_router(admin_controller.router)
+app.include_router(zapsign_controller.router)
 
 
 @app.get("/health", response_model=HealthResponse)

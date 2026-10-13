@@ -12,13 +12,18 @@ from fastapi import HTTPException
 from pony.orm import db_session
 
 from src import schemas
+from src.plans import CONTRACT_BY_PLAN, PLANS, VALID_PLANS
 from src.models import OnboardingSession
 from src.password_crypto import decrypt_password, encrypt_password
 from src.services.email_service import EmailServices, ONBOARDING_FRONTEND_URL
+from decouple import config
+
+# Mientras está en false, las altas nuevas no exigen contrato y el paso de firma se salta solo.
+# Pasar a true cuando estén las plantillas (ZAPSIGN_TEMPLATE_*) y el webhook configurados.
+CONTRACT_STEP_ENABLED = config("CONTRACT_STEP_ENABLED", default=False, cast=bool)
 
 logger = logging.getLogger(__name__)
 
-from src.plans import PLANS, VALID_PLANS
 PASSWORD_ALPHABET = string.ascii_letters + string.digits
 
 
@@ -74,6 +79,10 @@ def _to_dashboard_item(session: OnboardingSession) -> schemas.DashboardSessionIt
         estado_actual=_compute_estado(session),
         has_access_password=bool(session.password_encrypted),
         form_data=_resolve_form_data(session),
+        contract_required=bool(session.contract_required),
+        contract_status=session.contract_status or "none",
+        contract_signed_at=session.contract_signed_at,
+        payment_mode=session.payment_mode,
     )
 
 
@@ -111,6 +120,10 @@ class AdminServices:
                 client_name=payload.name,
                 client_email=payload.email,
                 plan=payload.plan,
+                payment_mode=payload.payment_mode,
+                contract_required=CONTRACT_STEP_ENABLED,
+                contract_kind=CONTRACT_BY_PLAN.get(payload.plan),
+                contract_status="none",
                 password_hash=password_hash,
                 password_encrypted=password_encrypted,
                 used=False,

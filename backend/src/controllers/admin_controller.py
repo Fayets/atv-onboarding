@@ -1,13 +1,15 @@
 from uuid import UUID
 
 from decouple import config
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import Response, APIRouter, Depends, Header, HTTPException
 
 from src import schemas
 from src.deps import verify_ecosystem_session
+from src.services.contract_services import ContractServices
 from src.services.admin_services import AdminServices
 from src.services.metrics_services import MetricsServices
 
+contract_service = ContractServices()
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 service = AdminServices()
 metrics_service = MetricsServices()
@@ -216,6 +218,15 @@ def delete_session(session_id: UUID, _: str = Depends(verify_ecosystem_session))
             detail="Error inesperado al eliminar la sesión.",
         )
 
+
+@router.get("/sessions/{session_id}/contract-pdf")
+def get_session_contract_pdf(session_id: UUID, _: str = Depends(verify_ecosystem_session)):
+    pdf, filename = contract_service.signed_pdf(session_id)
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="{filename}"'},
+    )
 
 # ---------- Alta desde el classroom (con la clave de admin, como /add-client) ----------
 @router.post("/sessions/{session_id}/create-discord-channel")

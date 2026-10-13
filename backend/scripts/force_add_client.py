@@ -31,7 +31,13 @@ def main() -> None:
     parser.add_argument(
         "--plan",
         default="Boost",
-        choices=["Boost", "Mentoría", "Advantage"],
+        choices=["Entry Level", "Mid Level", "High Level", "Boost", "Mentoría"],
+    )
+    parser.add_argument(
+        "--pago",
+        default="Pago único",
+        choices=["Pago único", "Dos cuotas", "Tres cuotas"],
+        help="Modalidad de pago pactada; va al contrato",
     )
     parser.add_argument(
         "--force",
@@ -48,7 +54,7 @@ def main() -> None:
             print(f"Eliminadas {removed} sesión(es) previas para {args.email}")
 
     result = AdminServices().add_client(
-        schemas.AddClientRequest(name=args.name, email=args.email, plan=args.plan)
+        schemas.AddClientRequest(name=args.name, email=args.email, plan=args.plan, payment_mode=args.pago)
     )
 
     print("OK")
