@@ -15,7 +15,7 @@ import { downloadAllFormFilesAsZip } from '../utils/formExport';
 
 const THEME_STORAGE_KEY = 'atv-dashboard-theme';
 
-const PLAN_OPTIONS = ['Todos', 'Boost', 'Mentoría', 'Advantage'];
+const PLAN_OPTIONS = ['Todos', 'Entry Level', 'Mid Level', 'High Level', 'Boost', 'Mentoría', 'Advantage'];
 const ESTADO_OPTIONS = [
   { value: 'todos', label: 'Todos' },
   { value: 'enviado', label: 'Enviado' },

@@ -36,17 +36,10 @@ _configure_discord_bot_logging()
 logger = logging.getLogger(__name__)
 logger.info("=== discord_bot.py cargado (pid=%s) ===", os.getpid())
 
-PLAN_CATEGORY_PATTERNS = {
-    "Boost": "canales atv boost",
-    "Mentoría": "canales privados avanzados",
-    "Advantage": "canales atv advantage",
-}
+from src.plans import DISCORD_CATEGORY_BY_PLAN, DISCORD_ROLE_BY_PLAN, PLANS
 
-PLAN_ROLE_NAMES = {
-    "Boost": "Boost",
-    "Mentoría": "Principiantes",
-    "Advantage": "Advantage",
-}
+PLAN_CATEGORY_PATTERNS = DISCORD_CATEGORY_BY_PLAN
+PLAN_ROLE_NAMES = DISCORD_ROLE_BY_PLAN
 
 WELCOME_SCRIPT_FIELD_NAME = (
     "📋 Script de bienvenida — copiá y pegá en el canal del cliente"
@@ -445,9 +438,7 @@ def _build_bot(guild_id: int) -> ATVDiscordBot:
     )
     @app_commands.choices(
         plan=[
-            app_commands.Choice(name="Boost", value="Boost"),
-            app_commands.Choice(name="Mentoría", value="Mentoría"),
-            app_commands.Choice(name="Advantage", value="Advantage"),
+            *[app_commands.Choice(name=p, value=p) for p in PLANS],
         ]
     )
     async def add_client(

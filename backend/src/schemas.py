@@ -57,7 +57,7 @@ class HealthDbResponse(BaseModel):
 class AddClientRequest(BaseModel):
     name: str = Field(min_length=1)
     email: EmailStr
-    plan: Literal["Boost", "Mentoría", "Advantage"]
+    plan: Literal["Entry Level", "Mid Level", "High Level", "Boost", "Mentoría"]
     # El alta desde el classroom crea todo sin mandar el mail: se manda después, una vez, con un botón.
     send_email: bool = True
 

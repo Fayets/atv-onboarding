@@ -473,6 +473,9 @@ const BLOCKS = [
           { key: 'a', label: 'Mentoría' },
           { key: 'b', label: 'Advantage' },
           { key: 'c', label: 'Boost' },
+          { key: 'd', label: 'Entry Level' },
+          { key: 'e', label: 'Mid Level' },
+          { key: 'f', label: 'High Level' },
         ],
       },
       {

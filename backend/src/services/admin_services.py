@@ -18,7 +18,7 @@ from src.services.email_service import EmailServices, ONBOARDING_FRONTEND_URL
 
 logger = logging.getLogger(__name__)
 
-VALID_PLANS = {"Boost", "Mentoría", "Advantage"}
+from src.plans import PLANS, VALID_PLANS
 PASSWORD_ALPHABET = string.ascii_letters + string.digits
 
 
@@ -95,7 +95,7 @@ class AdminServices:
         if payload.plan not in VALID_PLANS:
             raise HTTPException(
                 status_code=400,
-                detail="Plan inválido. Opciones: Boost, Mentoría, Advantage.",
+                detail="Plan inválido. Opciones: " + ", ".join(PLANS) + ".",
             )
 
         password = _generate_password()
