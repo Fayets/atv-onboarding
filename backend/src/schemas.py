@@ -58,6 +58,8 @@ class AddClientRequest(BaseModel):
     name: str = Field(min_length=1)
     email: EmailStr
     plan: Literal["Boost", "Mentoría", "Advantage"]
+    # El alta desde el classroom crea todo sin mandar el mail: se manda después, una vez, con un botón.
+    send_email: bool = True
 
 
 class AddClientResponse(BaseModel):

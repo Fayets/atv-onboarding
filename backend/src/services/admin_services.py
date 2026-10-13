@@ -122,18 +122,19 @@ class AdminServices:
 
         onboarding_url = f"{ONBOARDING_FRONTEND_URL}/"
 
-        try:
-            self._email.send_onboarding_email(
-                to_email=payload.email,
-                name=payload.name,
-                password=password,
-                plan=payload.plan,
-                onboarding_url=onboarding_url,
-            )
-        except Exception:
-            logger.exception(
-                "Error al enviar email de onboarding a %s", payload.email
-            )
+        if payload.send_email:
+            try:
+                self._email.send_onboarding_email(
+                    to_email=payload.email,
+                    name=payload.name,
+                    password=password,
+                    plan=payload.plan,
+                    onboarding_url=onboarding_url,
+                )
+            except Exception:
+                logger.exception(
+                    "Error al enviar email de onboarding a %s", payload.email
+                )
 
         return schemas.AddClientResponse(
             session_id=str(session_id),
@@ -351,6 +352,56 @@ class AdminServices:
             session_id=str(session_id),
             estado_actual=estado_actual,
         )
+
+    def send_onboarding_email(self, session_id: UUID) -> dict:
+        """Manda el mail de onboarding con la clave que ya tiene la sesión (alta desde el classroom)."""
+        with db_session:
+            session = OnboardingSession.get(id=session_id)
+            if not session:
+                raise HTTPException(status_code=404, detail="Sesión no encontrada.")
+            password = decrypt_password(session.password_encrypted)
+            if not password or not session.client_email:
+                raise HTTPException(status_code=400, detail="La sesión no tiene mail o clave para mandar.")
+            datos = (session.client_email, session.client_name or "", session.plan or "Boost")
+        self._email.send_onboarding_email(
+            to_email=datos[0],
+            name=datos[1],
+            password=password,
+            plan=datos[2],
+            onboarding_url=f"{ONBOARDING_FRONTEND_URL}/",
+        )
+        return {"session_id": str(session_id), "email": datos[0], "sent": True}
+
+    def create_discord_channel(self, session_id: UUID) -> dict:
+        """Crea el canal privado de Discord (categoría del plan + invitación) para una sesión."""
+        from src.services.discord_bot import crear_canal_cliente
+
+        with db_session:
+            session = OnboardingSession.get(id=session_id)
+            if not session:
+                raise HTTPException(status_code=404, detail="Sesión no encontrada.")
+            if session.discord_channel_id:
+                return {"discord_channel_id": session.discord_channel_id, "discord_invite_url": session.discord_invite_url}
+            nombre, plan = session.client_name or "cliente", session.plan or "Boost"
+        canal_id, invite_url = crear_canal_cliente(slugify_name(nombre), plan, nombre)
+        with db_session:
+            session = OnboardingSession.get(id=session_id)
+            session.discord_channel_id = canal_id
+            session.discord_invite_url = invite_url
+        return {"discord_channel_id": canal_id, "discord_invite_url": invite_url}
+
+    def cancel_client(self, session_id: UUID) -> schemas.DeleteSessionResponse:
+        """Anula un alta: borra el canal de Discord (si se creó) y la sesión."""
+        from src.services.discord_bot import borrar_canal
+
+        with db_session:
+            session = OnboardingSession.get(id=session_id)
+            if not session:
+                raise HTTPException(status_code=404, detail="Sesión no encontrada.")
+            canal_id = session.discord_channel_id
+        if canal_id:
+            borrar_canal(canal_id)
+        return self.delete_session(session_id)
 
     def delete_session(self, session_id: UUID) -> schemas.DeleteSessionResponse:
         with db_session:
