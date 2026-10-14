@@ -4,7 +4,7 @@ import Layout, { LOGO_URL } from '../components/Layout';
 import ContractStep from '../components/ContractStep';
 import OnboardingForm from '../components/OnboardingForm';
 import SeekConfirmModal from '../components/SeekConfirmModal';
-import { STEPS } from '../constants/steps';
+import { STEPS, MUDANZA } from '../constants/steps';
 import { getSession, joinDiscord, openClassroom } from '../api/client';
 import {
   demoUnlock,
@@ -328,6 +328,36 @@ export default function OnboardingPage() {
             <div className="panel-inner flex flex-col">
               <h1 className="text-[24px] md:text-[30px] font-bold tracking-[-0.03em] text-white mb-[0.6rem] leading-[1.2]">Tus recursos</h1>
               <p className="text-[15px] text-[rgba(255,255,255,0.45)] mb-9 leading-[1.55] tracking-[-0.01em]">Tu espacio de trabajo con ATV y la comunidad.</p>
+              {MUDANZA ? (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                    {[
+                      ['Skool', 'Las clases del programa. Empezá por Start Here antes de tu primera sesión.', 'rgba(255,196,0,0.14)', 'rgba(255,196,0,0.3)', '#f5b700'],
+                      ['Discord', 'Tu canal privado con el equipo y la comunidad. Hacé preguntas y compartí avances.', 'rgba(88,101,242,0.15)', 'rgba(88,101,242,0.25)', '#5865f2'],
+                    ].map(([nombre, texto, fondo, borde, color]) => (
+                      <div key={nombre} className="glass-card px-[1.35rem] py-6 flex flex-col gap-[11px]">
+                        <div className="w-11 h-11 rounded-[10px] flex items-center justify-center" style={{ background: fondo, border: `1px solid ${borde}` }}>
+                          <span className="text-[15px] font-bold" style={{ color }}>{nombre[0]}</span>
+                        </div>
+                        <h3 className="text-[14.5px] font-semibold tracking-[-0.02em] text-white">{nombre}</h3>
+                        <p className="text-[13px] text-[rgba(255,255,255,0.4)] leading-[1.65] flex-1">{texto}</p>
+                        <span className="text-[13px] font-medium text-[#4ade80] tracking-[-0.01em]">Ya tenés acceso ✓</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="glass-card px-[1.35rem] py-5 mb-7 flex items-start gap-[14px]" style={{ borderColor: 'rgba(230,57,70,0.35)', background: 'linear-gradient(135deg, rgba(230,57,70,0.12), rgba(230,57,70,0.03))' }}>
+                    <div className="w-11 h-11 shrink-0 rounded-[10px] flex items-center justify-center bg-[rgba(230,57,70,0.15)] border border-[rgba(230,57,70,0.3)]">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#e63946" strokeWidth="1.75" width="20" height="20">
+                        <path d="M3 12h13m0 0l-4-4m4 4l-4 4M21 5v14" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-[14.5px] font-semibold tracking-[-0.02em] text-white mb-[4px]">Muy pronto nos mudamos a una nueva plataforma</h3>
+                      <p className="text-[13px] text-[rgba(255,255,255,0.55)] leading-[1.65]">Vamos a integrar todo en un solo lugar: las clases, tu roadmap y el chat directo con tu coach. Cuando esté lista te avisamos y te pasamos el acceso. Mientras tanto, seguimos por Skool y Discord.</p>
+                    </div>
+                  </div>
+                </>
+              ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-7">
                 <div className={`glass-card px-[1.35rem] py-6 flex flex-col gap-[11px] ${client?.discord_invite_used ? 'opacity-30 cursor-default' : 'opacity-100'}`}>
                   <div className="w-11 h-11 rounded-[10px] flex items-center justify-center bg-[rgba(88,101,242,0.15)] border border-[rgba(88,101,242,0.25)]">
@@ -378,6 +408,7 @@ export default function OnboardingPage() {
                   </a>
                 </div>
               </div>
+              )}
               <div className="flex gap-[10px] items-stretch mt-7">
                 <button type="button" className="btn-secondary flex items-center rounded-lg px-5 py-[0.8rem] text-[14.5px] font-sans tracking-[-0.01em] cursor-pointer whitespace-nowrap border-0" onClick={() => goToStep(3)}>← Anterior</button>
                 <button type="button" className="btn-primary flex flex-1 items-center justify-center rounded-lg px-6 py-[0.85rem] text-[15px] font-semibold font-sans tracking-[-0.01em] cursor-pointer border-0 text-white" onClick={() => goToStep(5)}>Siguiente</button>
@@ -497,11 +528,18 @@ export default function OnboardingPage() {
               <h1 className="text-[24px] md:text-[30px] font-bold tracking-[-0.03em] text-white mb-[0.6rem] leading-[1.2]">¡Todo listo!</h1>
               <p className="text-[15px] text-[rgba(255,255,255,0.45)] mb-9 leading-[1.55] tracking-[-0.01em]">Ya tenés todo lo que necesitás para empezar. Ahora viene lo importante.</p>
               <div className="flex flex-col gap-5 w-full max-w-[380px] mb-8 text-left">
-                {[
-                  ['Uníte a Discord y presentáte', 'Decile al grupo quién sos y qué querés lograr.'],
-                  ['Entrá al classroom', 'Revisá las clases de Start Here antes de nuestra primera sesión.'],
-                  ['Agendá tu primera sesión', 'Coordinamos fecha y horario por el chat del classroom.'],
-                ].map(([title, desc], i) => (
+                {(MUDANZA
+                  ? [
+                      ['Presentate en Discord', 'Ya estás en el servidor: decile al grupo quién sos y qué querés lograr.'],
+                      ['Entrá a Skool', 'Revisá las clases de Start Here antes de nuestra primera sesión.'],
+                      ['Agendá tu primera sesión', 'Coordinamos fecha y horario por tu canal de Discord.'],
+                    ]
+                  : [
+                      ['Uníte a Discord y presentáte', 'Decile al grupo quién sos y qué querés lograr.'],
+                      ['Entrá al classroom', 'Revisá las clases de Start Here antes de nuestra primera sesión.'],
+                      ['Agendá tu primera sesión', 'Coordinamos fecha y horario por el chat del classroom.'],
+                    ]
+                ).map(([title, desc], i) => (
                   <div key={title} className="flex items-start gap-[14px]">
                     <span className="step-badge w-[26px] h-[26px] rounded-[7px] text-white text-[12px] font-bold flex items-center justify-center shrink-0 mt-[1px]">{i + 1}</span>
                     <div>

@@ -97,6 +97,12 @@ def _format_datetime(value: datetime | str) -> str:
 
 
 def _build_welcome_script(name: str) -> str:
+    # Mientras el classroom no está abierto a los clientes siguen en Skool (MUDANZA, igual que el frontend).
+    recursos = (
+        "Tus recursos: Skool y Discord (ya tenés acceso a los dos)"
+        if config("MUDANZA", default=True, cast=bool)
+        else "Unirte a Discord y entrar al Classroom (clases, roadmap y chat con tu coach)"
+    )
     return (
         f"@{name}, este es tu canal privado dentro de ATV. Acá vas a tener seguimiento "
         f"directo con el equipo durante el programa. Cualquier duda, avance o entrega, "
@@ -114,7 +120,7 @@ def _build_welcome_script(name: str) -> str:
         "Entrá al link, iniciá sesión y recorré todos los pasos hasta el final:\n"
         "\n"
         "Bienvenida y cómo trabajamos\n"
-        "Unirte a Discord y entrar al Classroom (clases, roadmap y chat con tu coach)\n"
+        f"{recursos}\n"
         "Video de bienvenida (obligatorio verlo completo)\n"
         "Completar tu perfil (formulario)\n"
         "Revisar próximos pasos\n"
