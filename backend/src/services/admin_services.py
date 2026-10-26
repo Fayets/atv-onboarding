@@ -106,10 +106,6 @@ class AdminServices:
                 status_code=400,
                 detail="Plan inválido. Opciones: " + ", ".join(PLANS) + ".",
             )
-        if CONTRACT_BY_PLAN.get(payload.plan) == "2k" and not all(
-            (x or "").strip() for x in (payload.call_link, payload.current_income, payload.target_income)
-        ):
-            raise HTTPException(status_code=400, detail="El 2K necesita el link de la llamada, los ingresos actuales y la meta.")
 
         password = _generate_password()
         password_hash = _hash_password(password)
@@ -126,9 +122,6 @@ class AdminServices:
                 plan=payload.plan,
                 # Pony no acepta None en Optional(str): sin valor va vacío (el 2K no tiene modalidad).
                 payment_mode=payload.payment_mode or "",
-                call_link=(payload.call_link or "").strip(),
-                current_income=(payload.current_income or "").strip(),
-                target_income=(payload.target_income or "").strip(),
                 contract_required=CONTRACT_STEP_ENABLED,
                 contract_kind=CONTRACT_BY_PLAN.get(payload.plan),
                 contract_status="none",

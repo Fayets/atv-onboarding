@@ -49,19 +49,7 @@ MIGRATIONS = [
     ALTER TABLE onboarding.sessions
     ADD COLUMN IF NOT EXISTS contract_kind TEXT;
     """,
-    # --- Contrato 2K: link de la llamada y la condición de la segunda cuota ---
-    """
-    ALTER TABLE onboarding.sessions
-    ADD COLUMN IF NOT EXISTS call_link TEXT;
-    """,
-    """
-    ALTER TABLE onboarding.sessions
-    ADD COLUMN IF NOT EXISTS current_income TEXT;
-    """,
-    """
-    ALTER TABLE onboarding.sessions
-    ADD COLUMN IF NOT EXISTS target_income TEXT;
-    """,
+
     """
     ALTER TABLE onboarding.sessions
     ADD COLUMN IF NOT EXISTS contract_status TEXT DEFAULT 'none';

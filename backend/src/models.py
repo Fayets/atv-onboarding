@@ -30,10 +30,6 @@ class OnboardingSession(db.Entity):
     # Contrato con ZapSign
     contract_required = Required(bool, default=False)
     payment_mode = Optional(str)
-    # Solo 2K: datos del contrato que carga quien da el alta.
-    call_link = Optional(str)
-    current_income = Optional(str)
-    target_income = Optional(str)
     contract_kind = Optional(str)
     contract_status = Optional(str, default="none")  # none | pending | signed
     contract_doc_token = Optional(str)

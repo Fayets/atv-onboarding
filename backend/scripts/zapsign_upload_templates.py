@@ -47,13 +47,11 @@ FORM_INPUTS = [
 ]
 
 
-# El 2K no lleva modalidad (sus cuotas están en el texto) y suma lo que carga quien da el alta.
+# El 2K no lleva modalidad: sus tres cuotas están en el texto, con las fechas que pone el onboarding.
 FORM_INPUTS_2K = [i for i in FORM_INPUTS if i["variable"] != "{{MODALIDAD_PAGO}}"] + [
     {"variable": "{{" + v + "}}", "label": f"{etiqueta} (ya cargado por ATV)", "input_type": "input", "required": True, "order": 12 + n}
     for n, (v, etiqueta) in enumerate([
         ("FECHA_CUOTA_1", "Primera cuota"), ("FECHA_CUOTA_2", "Segunda cuota"), ("FECHA_CUOTA_3", "Tercera cuota"),
-        ("FECHA_LLAMADA", "Fecha de la llamada"), ("LINK_LLAMADA", "Grabación de la llamada"),
-        ("INGRESOS_ACTUALES", "Tus ingresos mensuales actuales"), ("META_INGRESOS", "Meta de ingresos a 30 días"),
     ])
 ]
 

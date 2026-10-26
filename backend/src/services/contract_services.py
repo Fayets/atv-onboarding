@@ -148,15 +148,10 @@ class ContractServices:
             data["MODALIDAD_PAGO"] = session.payment_mode
         if kind == "2k":
             # Cuotas el día de la firma, a un mes y a dos meses (como el contrato de Máximo: 26/10, 26/11, 26/12).
-            alta = (session.created_at.replace(tzinfo=timezone.utc).astimezone(TZ) if session.created_at else today)
             data.update({
                 "FECHA_CUOTA_1": _fecha_larga(today),
                 "FECHA_CUOTA_2": _fecha_larga(_sumar_meses(today, 1)),
                 "FECHA_CUOTA_3": _fecha_larga(_sumar_meses(today, 2)),
-                "FECHA_LLAMADA": _fecha_larga(alta),
-                "LINK_LLAMADA": session.call_link or "",
-                "INGRESOS_ACTUALES": session.current_income or "",
-                "META_INGRESOS": session.target_income or "",
             })
         # DOCUMENTO, CALLE, CIUDAD, PROVINCIA, PAIS y, si no vino cargada, MODALIDAD_PAGO
         # los completa el cliente en ZapSign antes de firmar.

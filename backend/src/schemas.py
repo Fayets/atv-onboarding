@@ -78,10 +78,6 @@ class AddClientRequest(BaseModel):
     email: EmailStr
     plan: Literal["Entry Level", "Mid Level", "High Level", "Boost", "Mentoría", "2K"]
     payment_mode: Literal["Pago único", "Dos cuotas", "Tres cuotas"] | None = None
-    # Solo 2K: van al contrato (link de la llamada de venta y la condición de la segunda cuota).
-    call_link: str | None = Field(default=None, max_length=500)
-    current_income: str | None = Field(default=None, max_length=160)
-    target_income: str | None = Field(default=None, max_length=160)
 
     # El alta desde el classroom crea todo sin mandar el mail: se manda después, una vez, con un botón.
     send_email: bool = True
