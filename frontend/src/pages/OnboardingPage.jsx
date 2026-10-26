@@ -394,7 +394,7 @@ export default function OnboardingPage() {
                     </svg>
                   </div>
                   <h3 className="text-[14.5px] font-semibold tracking-[-0.02em] text-white">Classroom</h3>
-                  <p className="text-[13px] text-[rgba(255,255,255,0.4)] leading-[1.65]">{es2K ? 'Las clases, los SOPs y tu roadmap. Es donde vas a trabajar con ATV.' : 'Las clases, tu roadmap y el chat directo con tu coach. Es donde vas a trabajar con ATV.'}</p>
+                  <p className="text-[13px] text-[rgba(255,255,255,0.4)] leading-[1.65]">{es2K ? 'Las clases, los SOPs, tu roadmap y el chat para pedir tus sesiones 1 a 1.' : 'Las clases, tu roadmap y el chat directo con tu coach. Es donde vas a trabajar con ATV.'}</p>
                   {client?.classroom_usuario && client?.classroom_clave ? (
                     <div className="w-full flex flex-col gap-[6px] text-[12.5px] text-[rgba(255,255,255,0.55)]">
                       <span>Usuario: <strong className="text-white select-all">{client.classroom_usuario}</strong></span>
@@ -535,7 +535,7 @@ export default function OnboardingPage() {
                 {(es2K
                   ? [
                       ['Entrá al classroom', 'Revisá las clases de Start Here antes de tu primera sesión.'],
-                      ['Agendá tu sesión de diagnóstico', 'Te escribimos por mail para coordinar fecha y horario.'],
+                      ['Pedí tu sesión de diagnóstico', 'Escribinos por el chat del classroom para agendarla.'],
                       ['Aplicá tu roadmap', 'Después de cada sesión vas a tener los próximos pasos en tu roadmap del classroom.'],
                     ]
                   : MUDANZA
