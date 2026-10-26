@@ -236,7 +236,7 @@ export default function OnboardingPage() {
                     {step.label}
                   </span>
                   <span className="step-sublabel block text-[12px] text-[rgba(255,255,255,0.18)] mt-[3px] transition-colors duration-200">
-                    {step.sublabel}
+                    {step.id === 4 && es2K ? 'Tu classroom' : step.sublabel}
                   </span>
                 </span>
               </button>
@@ -329,7 +329,7 @@ export default function OnboardingPage() {
           <div data-panel="4" className={`panel absolute inset-0 items-center justify-center panel-padding overflow-y-auto ${currentStep === 4 ? 'active' : ''}`}>
             <div className="panel-inner flex flex-col">
               <h1 className="text-[24px] md:text-[30px] font-bold tracking-[-0.03em] text-white mb-[0.6rem] leading-[1.2]">Tus recursos</h1>
-              <p className="text-[15px] text-[rgba(255,255,255,0.45)] mb-9 leading-[1.55] tracking-[-0.01em]">Tu espacio de trabajo con ATV y la comunidad.</p>
+              <p className="text-[15px] text-[rgba(255,255,255,0.45)] mb-9 leading-[1.55] tracking-[-0.01em]">{es2K ? 'Tu espacio de trabajo con ATV.' : 'Tu espacio de trabajo con ATV y la comunidad.'}</p>
               {MUDANZA && !es2K ? (
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">

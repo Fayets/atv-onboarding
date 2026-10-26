@@ -119,7 +119,9 @@ export default function ContractStep({ contract, clientName, clientEmail, onCont
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
               <Fact label="Contratante" value={clientName || '—'} />
               <Fact label="Email de notificaciones" value={clientEmail || '—'} />
-              {contract?.payment_mode ? (
+              {contract?.kind === '2k' ? (
+                <Fact label="Pago" value="3 cuotas: USD 500, 500 y 1.300" />
+              ) : contract?.payment_mode ? (
                 <Fact label="Modalidad de pago" value={contract.payment_mode} />
               ) : (
                 <Fact label="Modalidad de pago" value="La elegís en ZapSign" muted />
