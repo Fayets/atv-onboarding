@@ -21,6 +21,19 @@ MESES = (
 )
 TZ = ZoneInfo("America/Argentina/Buenos_Aires")
 
+
+def _sumar_meses(d: datetime, meses: int) -> datetime:
+    """El mismo día N meses después; si ese mes es más corto, su último día (31/01 + 1 mes = 28/02)."""
+    import calendar
+
+    m = d.month - 1 + meses
+    anio, mes = d.year + m // 12, m % 12 + 1
+    return d.replace(year=anio, month=mes, day=min(d.day, calendar.monthrange(anio, mes)[1]))
+
+
+def _fecha_larga(d: datetime) -> str:
+    return f"{d.day} de {MESES[d.month - 1].lower()} de {d.year}"
+
 # Cada cuántos segundos, como máximo, le preguntamos a ZapSign por un contrato pendiente
 # cuando el cliente está esperando. El webhook es el camino principal; esto es el respaldo.
 CHECK_EVERY_SECONDS = 30
@@ -133,6 +146,18 @@ class ContractServices:
         }
         if kind not in SINGLE_PAYMENT_CONTRACTS and session.payment_mode in PAYMENT_MODES:
             data["MODALIDAD_PAGO"] = session.payment_mode
+        if kind == "2k":
+            # Cuotas el día de la firma, a un mes y a dos meses (como el contrato de Máximo: 26/10, 26/11, 26/12).
+            alta = (session.created_at.replace(tzinfo=timezone.utc).astimezone(TZ) if session.created_at else today)
+            data.update({
+                "FECHA_CUOTA_1": _fecha_larga(today),
+                "FECHA_CUOTA_2": _fecha_larga(_sumar_meses(today, 1)),
+                "FECHA_CUOTA_3": _fecha_larga(_sumar_meses(today, 2)),
+                "FECHA_LLAMADA": _fecha_larga(alta),
+                "LINK_LLAMADA": session.call_link or "",
+                "INGRESOS_ACTUALES": session.current_income or "",
+                "META_INGRESOS": session.target_income or "",
+            })
         # DOCUMENTO, CALLE, CIUDAD, PROVINCIA, PAIS y, si no vino cargada, MODALIDAD_PAGO
         # los completa el cliente en ZapSign antes de firmar.
         return {k: v for k, v in data.items() if v}

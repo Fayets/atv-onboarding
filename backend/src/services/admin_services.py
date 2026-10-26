@@ -12,7 +12,7 @@ from fastapi import HTTPException
 from pony.orm import db_session
 
 from src import schemas
-from src.plans import CONTRACT_BY_PLAN, PLANS, VALID_PLANS
+from src.plans import CONTRACT_BY_PLAN, PLANS, PLANS_WITHOUT_DISCORD, VALID_PLANS
 from src.models import OnboardingSession
 from src.password_crypto import decrypt_password, encrypt_password
 from src.services.email_service import EmailServices, ONBOARDING_FRONTEND_URL
@@ -106,6 +106,10 @@ class AdminServices:
                 status_code=400,
                 detail="Plan inválido. Opciones: " + ", ".join(PLANS) + ".",
             )
+        if CONTRACT_BY_PLAN.get(payload.plan) == "2k" and not all(
+            (x or "").strip() for x in (payload.call_link, payload.current_income, payload.target_income)
+        ):
+            raise HTTPException(status_code=400, detail="El 2K necesita el link de la llamada, los ingresos actuales y la meta.")
 
         password = _generate_password()
         password_hash = _hash_password(password)
@@ -121,6 +125,9 @@ class AdminServices:
                 client_email=payload.email,
                 plan=payload.plan,
                 payment_mode=payload.payment_mode,
+                call_link=(payload.call_link or "").strip() or None,
+                current_income=(payload.current_income or "").strip() or None,
+                target_income=(payload.target_income or "").strip() or None,
                 contract_required=CONTRACT_STEP_ENABLED,
                 contract_kind=CONTRACT_BY_PLAN.get(payload.plan),
                 contract_status="none",
@@ -396,6 +403,8 @@ class AdminServices:
             if session.discord_channel_id:
                 return {"discord_channel_id": session.discord_channel_id, "discord_invite_url": session.discord_invite_url}
             nombre, plan = session.client_name or "cliente", session.plan or "Boost"
+            if plan in PLANS_WITHOUT_DISCORD:
+                raise HTTPException(status_code=422, detail=f"El plan {plan} no tiene canal de Discord.")
         canal_id, invite_url = crear_canal_cliente(slugify_name(nombre), plan, nombre)
         with db_session:
             session = OnboardingSession.get(id=session_id)

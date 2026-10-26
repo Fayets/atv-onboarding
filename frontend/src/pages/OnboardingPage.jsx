@@ -26,6 +26,8 @@ export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [videoCompleted, setVideoCompleted] = useState(false);
   const [client, setClient] = useState(null);
+  // 2K: sin Discord ni chat, todo pasa por el classroom.
+  const es2K = client?.plan === '2K';
   const contract = client?.contract || null;
   const contractDone = !contract?.required || contract?.status === 'signed';
   const handleContractChange = useCallback((data) => {
@@ -328,7 +330,7 @@ export default function OnboardingPage() {
             <div className="panel-inner flex flex-col">
               <h1 className="text-[24px] md:text-[30px] font-bold tracking-[-0.03em] text-white mb-[0.6rem] leading-[1.2]">Tus recursos</h1>
               <p className="text-[15px] text-[rgba(255,255,255,0.45)] mb-9 leading-[1.55] tracking-[-0.01em]">Tu espacio de trabajo con ATV y la comunidad.</p>
-              {MUDANZA ? (
+              {MUDANZA && !es2K ? (
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                     {[
@@ -358,7 +360,8 @@ export default function OnboardingPage() {
                   </div>
                 </>
               ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-7">
+              <div className={`grid grid-cols-1 ${es2K ? '' : 'sm:grid-cols-2 '}gap-3 mb-7`}>
+                {es2K ? null : (
                 <div className={`glass-card px-[1.35rem] py-6 flex flex-col gap-[11px] ${client?.discord_invite_used ? 'opacity-30 cursor-default' : 'opacity-100'}`}>
                   <div className="w-11 h-11 rounded-[10px] flex items-center justify-center bg-[rgba(88,101,242,0.15)] border border-[rgba(88,101,242,0.25)]">
                     <svg viewBox="0 0 24 24" fill="#5865f2" width="20" height="20"><path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03z" /></svg>
@@ -382,6 +385,7 @@ export default function OnboardingPage() {
                     <span className="text-[13px] text-[rgba(255,255,255,0.3)]">Link de Discord no configurado</span>
                   )}
                 </div>
+                )}
                 <div className={`glass-card justify-start items-start px-[1.35rem] py-6 flex flex-col gap-[11px] sm:order-first`}>
                   <div className="w-11 h-11 rounded-[10px] flex items-center justify-center bg-[rgba(230,57,70,0.12)] border border-[rgba(230,57,70,0.25)]">
                     <svg viewBox="0 0 24 24" fill="none" stroke="#e63946" strokeWidth="1.75" width="20" height="20">
@@ -390,7 +394,7 @@ export default function OnboardingPage() {
                     </svg>
                   </div>
                   <h3 className="text-[14.5px] font-semibold tracking-[-0.02em] text-white">Classroom</h3>
-                  <p className="text-[13px] text-[rgba(255,255,255,0.4)] leading-[1.65]">Las clases, tu roadmap y el chat directo con tu coach. Es donde vas a trabajar con ATV.</p>
+                  <p className="text-[13px] text-[rgba(255,255,255,0.4)] leading-[1.65]">{es2K ? 'Las clases, los SOPs y tu roadmap. Es donde vas a trabajar con ATV.' : 'Las clases, tu roadmap y el chat directo con tu coach. Es donde vas a trabajar con ATV.'}</p>
                   {client?.classroom_usuario && client?.classroom_clave ? (
                     <div className="w-full flex flex-col gap-[6px] text-[12.5px] text-[rgba(255,255,255,0.55)]">
                       <span>Usuario: <strong className="text-white select-all">{client.classroom_usuario}</strong></span>
@@ -528,7 +532,13 @@ export default function OnboardingPage() {
               <h1 className="text-[24px] md:text-[30px] font-bold tracking-[-0.03em] text-white mb-[0.6rem] leading-[1.2]">¡Todo listo!</h1>
               <p className="text-[15px] text-[rgba(255,255,255,0.45)] mb-9 leading-[1.55] tracking-[-0.01em]">Ya tenés todo lo que necesitás para empezar. Ahora viene lo importante.</p>
               <div className="flex flex-col gap-5 w-full max-w-[380px] mb-8 text-left">
-                {(MUDANZA
+                {(es2K
+                  ? [
+                      ['Entrá al classroom', 'Revisá las clases de Start Here antes de tu primera sesión.'],
+                      ['Agendá tu sesión de diagnóstico', 'Te escribimos por mail para coordinar fecha y horario.'],
+                      ['Aplicá tu roadmap', 'Después de cada sesión vas a tener los próximos pasos en tu roadmap del classroom.'],
+                    ]
+                  : MUDANZA
                   ? [
                       ['Presentate en Discord', 'Ya estás en el servidor: decile al grupo quién sos y qué querés lograr.'],
                       ['Entrá a Skool', 'Revisá las clases de Start Here antes de nuestra primera sesión.'],

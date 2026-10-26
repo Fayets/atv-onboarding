@@ -10,7 +10,7 @@ import discord
 import httpx
 from decouple import config
 
-from src.plans import DISCORD_CATEGORY_BY_PLAN, DISCORD_ROLE_BY_PLAN, PAYMENT_MODES, PLANS
+from src.plans import DISCORD_CATEGORY_BY_PLAN, DISCORD_PLANS, DISCORD_ROLE_BY_PLAN, PAYMENT_MODES
 from discord import app_commands
 
 LOG_FORMAT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
@@ -448,7 +448,7 @@ def _build_bot(guild_id: int) -> ATVDiscordBot:
         pago="Modalidad de pago pactada (va al contrato; High Level es siempre pago único)",
     )
     @app_commands.choices(
-        plan=[app_commands.Choice(name=p, value=p) for p in PLANS],
+        plan=[app_commands.Choice(name=p, value=p) for p in DISCORD_PLANS],
         pago=[app_commands.Choice(name=m, value=m) for m in PAYMENT_MODES],
     )
     async def add_client(

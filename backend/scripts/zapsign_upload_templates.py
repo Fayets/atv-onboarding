@@ -1,4 +1,4 @@
-"""Sube los tres contratos DOCX a ZapSign como plantillas y configura su formulario.
+"""Sube los contratos DOCX a ZapSign como plantillas y configura su formulario.
 
 Uso (desde backend/, con el .env cargado):
     python scripts/zapsign_upload_templates.py            # sube los que falten en .env
@@ -24,6 +24,7 @@ FILES = {
     "entry": "Contrato ENTRY LEVEL ATV.docx",
     "mid": "Contrato MID LEVEL ATV.docx",
     "high": "Contrato HIGH LEVEL ATV.docx",
+    "2k": "Contrato 2K ATV.docx",
 }
 
 # Lo que ve el cliente en ZapSign antes de firmar. Lo precargado por el onboarding
@@ -43,6 +44,17 @@ FORM_INPUTS = [
     {"variable": "{{EMAIL_EMPRESA}}", "label": "Email de ATV (ya cargado por ATV)", "input_type": "email", "required": True, "order": 11},
     {"variable": "{{MODALIDAD_PAGO}}", "label": "Modalidad de pago (la pactada con tu closer)", "input_type": "dropdown-list", "required": True, "order": 12,
      "options": "Pago único;Dos cuotas;Tres cuotas"},
+]
+
+
+# El 2K no lleva modalidad (sus cuotas están en el texto) y suma lo que carga quien da el alta.
+FORM_INPUTS_2K = [i for i in FORM_INPUTS if i["variable"] != "{{MODALIDAD_PAGO}}"] + [
+    {"variable": "{{" + v + "}}", "label": f"{etiqueta} (ya cargado por ATV)", "input_type": "input", "required": True, "order": 12 + n}
+    for n, (v, etiqueta) in enumerate([
+        ("FECHA_CUOTA_1", "Primera cuota"), ("FECHA_CUOTA_2", "Segunda cuota"), ("FECHA_CUOTA_3", "Tercera cuota"),
+        ("FECHA_LLAMADA", "Fecha de la llamada"), ("LINK_LLAMADA", "Grabación de la llamada"),
+        ("INGRESOS_ACTUALES", "Tus ingresos mensuales actuales"), ("META_INGRESOS", "Meta de ingresos a 30 días"),
+    ])
 ]
 
 
@@ -73,7 +85,7 @@ def main() -> int:
             print(f"No encuentro {path}")
             return 1
 
-        inputs = FORM_INPUTS if kind != "high" else [i for i in FORM_INPUTS if i["variable"] != "{{MODALIDAD_PAGO}}"]
+        inputs = FORM_INPUTS_2K if kind == "2k" else FORM_INPUTS if kind != "high" else [i for i in FORM_INPUTS if i["variable"] != "{{MODALIDAD_PAGO}}"]
         # Si ya hay una plantilla DOCX con este nombre (corrida anterior a medias), se reutiliza.
         previa = next(
             (t for t in zs.list_templates() if t.get("name") == CONTRACT_LABELS[kind] and t.get("template_type") == "docx"),
