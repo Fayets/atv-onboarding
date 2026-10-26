@@ -38,11 +38,14 @@ export default function OnboardingPage() {
   const [seekModalOpen, setSeekModalOpen] = useState(false);
   const seekConfirmRef = useRef(null);
 
+  const formDone = Boolean(client?.form_submitted);
   const goToStep = useCallback(
     (n) => {
       if (n === currentStep) return;
       if (n >= 3 && !contractDone) return;
       if (n >= 6 && !videoCompleted) return;
+      // El formulario es obligatorio para todos los planes: sin enviarlo no se llega a Próximos pasos.
+      if (n >= 7 && !formDone) return;
       setCurrentStep(n);
       if (n === 5) {
         setTimeout(() => {
@@ -50,7 +53,7 @@ export default function OnboardingPage() {
         }, 100);
       }
     },
-    [currentStep, videoCompleted, contractDone],
+    [currentStep, videoCompleted, contractDone, formDone],
   );
 
   useEffect(() => {
@@ -174,7 +177,7 @@ export default function OnboardingPage() {
 
   const currentStepData = STEPS[currentStep - 1];
 
-  const stepLocked = (stepId) => (stepId >= 3 && !contractDone) || (stepId >= 6 && !videoCompleted);
+  const stepLocked = (stepId) => (stepId >= 3 && !contractDone) || (stepId >= 6 && !videoCompleted) || (stepId >= 7 && !formDone);
 
   return (
     <Layout fullScreen>
