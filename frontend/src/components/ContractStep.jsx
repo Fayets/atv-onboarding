@@ -120,7 +120,7 @@ export default function ContractStep({ contract, clientName, clientEmail, onCont
               <Fact label="Contratante" value={clientName || '—'} />
               <Fact label="Email de notificaciones" value={clientEmail || '—'} />
               {contract?.kind === '2k' ? (
-                <Fact label="Pago" value="3 cuotas: USD 500, 500 y 1.300" />
+                <Fact label="Pago" value="3 cuotas: USD 500, 650 y 1.150" />
               ) : contract?.payment_mode ? (
                 <Fact label="Modalidad de pago" value={contract.payment_mode} />
               ) : (
