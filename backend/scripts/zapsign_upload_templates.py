@@ -56,9 +56,16 @@ FORM_INPUTS_2K = [i for i in FORM_INPUTS if i["variable"] != "{{MODALIDAD_PAGO}}
 ]
 
 
+def _texto_docx(path: Path) -> str:
+    import zipfile
+
+    return zipfile.ZipFile(path).read("word/document.xml").decode()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--force", action="store_true", help="Re-subir aunque ya haya token en .env")
+    parser.add_argument("--solo", default="", help="Solo estos contratos, separados por coma (ej. --solo=2k)")
     args = parser.parse_args()
 
     zs = ZapSignService()
@@ -70,7 +77,10 @@ def main() -> int:
     redirect = f"{frontend_url}/?contrato=firmado" if frontend_url else ""
     result: dict[str, str] = {}
 
+    solo = {k.strip() for k in args.solo.split(",") if k.strip()}
     for kind, filename in FILES.items():
+        if solo and kind not in solo:
+            continue
         env_key = f"ZAPSIGN_TEMPLATE_{kind.upper()}"
         existing = config(env_key, default="").strip()
         if existing and not args.force:
@@ -84,6 +94,9 @@ def main() -> int:
             return 1
 
         inputs = FORM_INPUTS_2K if kind == "2k" else FORM_INPUTS if kind != "high" else [i for i in FORM_INPUTS if i["variable"] != "{{MODALIDAD_PAGO}}"]
+        # Solo los campos que el documento tiene de verdad (el 2K de Máximo trae las fechas de cuota escritas).
+        texto = _texto_docx(path)
+        inputs = [i for i in inputs if i["variable"] in texto]
         # Si ya hay una plantilla DOCX con este nombre (corrida anterior a medias), se reutiliza.
         previa = next(
             (t for t in zs.list_templates() if t.get("name") == CONTRACT_LABELS[kind] and t.get("template_type") == "docx"),

@@ -146,8 +146,9 @@ class ContractServices:
         }
         if kind not in SINGLE_PAYMENT_CONTRACTS and session.payment_mode in PAYMENT_MODES:
             data["MODALIDAD_PAGO"] = session.payment_mode
-        if kind == "2k":
-            # Cuotas el día de la firma, a un mes y a dos meses (como el contrato de Máximo: 26/10, 26/11, 26/12).
+        if kind == "2k" and config("ZAPSIGN_2K_FECHAS_VARIABLES", default=False, cast=bool):
+            # Cuotas el día de la firma, a un mes y a dos meses. Apagado mientras el 2K sea el contrato de Máximo,
+            # que trae sus fechas negociadas escritas (26/10, 26/11, 26/12); se prende con el contrato genérico.
             data.update({
                 "FECHA_CUOTA_1": _fecha_larga(today),
                 "FECHA_CUOTA_2": _fecha_larga(_sumar_meses(today, 1)),
