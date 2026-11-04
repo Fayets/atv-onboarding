@@ -17,6 +17,7 @@ import {
   setVideoSessionId,
   startProgressDrag,
   toggleFullscreen,
+  toggleMute,
   togglePlay,
   unlockPanels,
 } from '../utils/videoPlayer';
@@ -487,6 +488,10 @@ export default function OnboardingPage() {
                       <svg id="pause-icon" viewBox="0 0 24 24" fill="currentColor" width="20" height="20" style={{ display: 'none' }}><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
                     </button>
                     <span id="progress-time" className="text-[12px] text-[rgba(255,255,255,0.6)]">00:00 / 35:05</span>
+                    <button type="button" id="mute-btn" onClick={toggleMute} aria-label="Activar o silenciar el sonido" title="Sonido" className="bg-transparent border-0 cursor-pointer text-white p-0 flex items-center justify-center hover:opacity-70">
+                      <svg id="sound-on-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M11 5L6 9H2v6h4l5 4V5zM15.5 8.5a5 5 0 010 7M19 5a9 9 0 010 14" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      <svg id="sound-off-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" style={{ display: 'none' }}><path d="M11 5L6 9H2v6h4l5 4V5zM23 9l-6 6M17 9l6 6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    </button>
                     <button type="button" id="fullscreen-btn" onClick={toggleFullscreen} className="text-[12px] cursor-pointer duration-200 hover:opacity-70 ml-auto text-[rgba(255,255,255,0.6)] bg-transparent border-0">
                       <svg id="fullscreen-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3" strokeLinecap="round" strokeLinejoin="round" /></svg>
                       <svg id="exit-fullscreen-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" style={{ display: 'none' }}><path d="M8 3v3a2 2 0 01-2 2H3m18 0h-3a2 2 0 01-2-2V3m0 18v-3a2 2 0 012-2h3M3 16h3a2 2 0 012 2v3" strokeLinecap="round" strokeLinejoin="round" /></svg>

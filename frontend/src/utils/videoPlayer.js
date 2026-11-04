@@ -64,6 +64,34 @@ function updatePlayPauseBtn() {
   }
 }
 
+let isMuted = false;
+
+function updateMuteBtn() {
+  const onIcon = document.getElementById('sound-on-icon');
+  const offIcon = document.getElementById('sound-off-icon');
+  if (!onIcon || !offIcon) return;
+  onIcon.style.display = isMuted ? 'none' : 'block';
+  offIcon.style.display = isMuted ? 'block' : 'none';
+}
+
+// Vimeo recuerda el volumen entre sesiones y, si el navegador no permite audio,
+// arranca silenciado. Al reproducir nos aseguramos de que se escuche.
+function ensureSound(player) {
+  return Promise.all([player.getMuted(), player.getVolume()])
+    .then(([muted, volume]) => {
+      const tasks = [];
+      if (muted) tasks.push(player.setMuted(false));
+      if (!volume || volume < 0.05) tasks.push(player.setVolume(1));
+      return Promise.all(tasks);
+    })
+    .then(() => player.getMuted())
+    .then((muted) => {
+      isMuted = Boolean(muted);
+      updateMuteBtn();
+    })
+    .catch(() => undefined);
+}
+
 function updateProgressUI(seconds) {
   if (duration <= 0) return;
 
@@ -234,8 +262,16 @@ function bindPlayerEvents(player) {
     updateProgressUI(data.seconds);
   });
 
+  player.on('volumechange', (data) => {
+    if (typeof data?.volume === 'number') {
+      isMuted = data.volume === 0;
+      updateMuteBtn();
+    }
+  });
+
   player.on('play', () => {
     isPlaying = true;
+    ensureSound(player);
     const overlay = document.getElementById('play-overlay');
     if (overlay) {
       overlay.style.opacity = '0';
@@ -277,7 +313,7 @@ export function lockPanels() {
 
   document.querySelectorAll('.step-item').forEach((el) => {
     const step = parseInt(el.dataset.step, 10);
-    if (step >= 5) {
+    if (step >= 6) {
       el.classList.add('opacity-30', 'pointer-events-none', 'cursor-not-allowed');
       el.classList.remove('cursor-pointer');
     }
@@ -294,7 +330,7 @@ export function unlockPanels() {
 
   document.querySelectorAll('.step-item').forEach((el) => {
     const step = parseInt(el.dataset.step, 10);
-    if (step >= 5) {
+    if (step >= 6) {
       el.classList.remove('opacity-30', 'pointer-events-none', 'cursor-not-allowed');
       el.classList.add('cursor-pointer');
     }
@@ -383,6 +419,15 @@ export function initVimeoPlayer(onComplete) {
 }
 
 export function togglePlay() {
+  // Si el player ya existe, play() va en el mismo click: Safari solo deja audio
+  // cuando la reproducción arranca dentro del gesto del usuario.
+  if (vimeoPlayer) {
+    const action = isPlaying ? vimeoPlayer.pause() : vimeoPlayer.play();
+    action.catch((error) => {
+      console.error('No se pudo reproducir el video:', error);
+    });
+    return;
+  }
   ensureVimeoPlayer()
     .then((player) => {
       if (isPlaying) {
@@ -392,6 +437,21 @@ export function togglePlay() {
     })
     .catch((error) => {
       console.error('No se pudo reproducir el video:', error);
+    });
+}
+
+export function toggleMute() {
+  ensureVimeoPlayer()
+    .then((player) => {
+      const next = !isMuted;
+      return player.setMuted(next).then(() => (next ? null : player.setVolume(1)));
+    })
+    .then(() => {
+      isMuted = !isMuted;
+      updateMuteBtn();
+    })
+    .catch((error) => {
+      console.error('No se pudo cambiar el sonido:', error);
     });
 }
 
