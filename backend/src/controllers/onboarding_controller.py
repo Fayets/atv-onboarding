@@ -45,7 +45,7 @@ async def join_skool(request: Request):
     except Exception:
         raise HTTPException(
             status_code=500,
-            detail="Error inesperado al enviar la invitación de Skool.",
+            detail="Error inesperado al abrir el classroom.",
         )
 
 

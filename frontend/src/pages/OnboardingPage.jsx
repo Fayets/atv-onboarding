@@ -336,10 +336,9 @@ export default function OnboardingPage() {
               <p className="text-[15px] text-[rgba(255,255,255,0.45)] mb-9 leading-[1.55] tracking-[-0.01em]">{es2K ? 'Tu espacio de trabajo con ATV.' : 'Tu espacio de trabajo con ATV y la comunidad.'}</p>
               {MUDANZA && !es2K ? (
                 <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                  <div className="grid grid-cols-1 gap-3 mb-3">
                     {[
-                      ['Skool', 'Las clases del programa. Empezá por Start Here antes de tu primera sesión.', 'rgba(255,196,0,0.14)', 'rgba(255,196,0,0.3)', '#f5b700'],
-                      ['Discord', 'Tu canal privado con el equipo y la comunidad. Hacé preguntas y compartí avances.', 'rgba(88,101,242,0.15)', 'rgba(88,101,242,0.25)', '#5865f2'],
+                      ['Discord', 'Tu canal privado con el equipo y la comunidad. Hacé preguntas, compartí avances y coordiná tus sesiones por ahí.', 'rgba(88,101,242,0.15)', 'rgba(88,101,242,0.25)', '#5865f2'],
                     ].map(([nombre, texto, fondo, borde, color]) => (
                       <div key={nombre} className="glass-card px-[1.35rem] py-6 flex flex-col gap-[11px]">
                         <div className="w-11 h-11 rounded-[10px] flex items-center justify-center" style={{ background: fondo, border: `1px solid ${borde}` }}>
@@ -359,7 +358,7 @@ export default function OnboardingPage() {
                     </div>
                     <div>
                       <h3 className="text-[14.5px] font-semibold tracking-[-0.02em] text-white mb-[4px]">Muy pronto nos mudamos a una nueva plataforma</h3>
-                      <p className="text-[13px] text-[rgba(255,255,255,0.55)] leading-[1.65]">Vamos a integrar todo en un solo lugar: las clases, tu roadmap y el chat directo con tu coach. Cuando esté lista te avisamos y te pasamos el acceso. Mientras tanto, seguimos por Skool y Discord.</p>
+                      <p className="text-[13px] text-[rgba(255,255,255,0.55)] leading-[1.65]">Vamos a integrar todo en un solo lugar: las clases, tu roadmap y el chat directo con tu coach. Cuando esté lista te avisamos y te pasamos el acceso. Mientras tanto, seguimos por Discord.</p>
                     </div>
                   </div>
                 </>
@@ -549,8 +548,8 @@ export default function OnboardingPage() {
                   : MUDANZA
                   ? [
                       ['Presentate en Discord', 'Ya estás en el servidor: decile al grupo quién sos y qué querés lograr.'],
-                      ['Entrá a Skool', 'Revisá las clases de Start Here antes de nuestra primera sesión.'],
                       ['Agendá tu primera sesión', 'Coordinamos fecha y horario por tu canal de Discord.'],
+                      ['Atento al mail', 'Te avisamos cuando la nueva plataforma esté lista y te pasamos el acceso.'],
                     ]
                   : [
                       ['Uníte a Discord y presentáte', 'Decile al grupo quién sos y qué querés lograr.'],

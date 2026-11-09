@@ -97,9 +97,9 @@ def _format_datetime(value: datetime | str) -> str:
 
 
 def _build_welcome_script(name: str) -> str:
-    # Mientras el classroom no está abierto a los clientes siguen en Skool (MUDANZA, igual que el frontend).
+    # Mientras el classroom no está abierto a los clientes siguen en Discord (MUDANZA, igual que el frontend).
     recursos = (
-        "Tus recursos: Skool y Discord (ya tenés acceso a los dos)"
+        "Tus recursos: Discord (ya tenés acceso a tu canal privado)"
         if config("MUDANZA", default=True, cast=bool)
         else "Unirte a Discord y entrar al Classroom (clases, roadmap y chat con tu coach)"
     )
