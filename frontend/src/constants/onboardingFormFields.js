@@ -1,7 +1,7 @@
 /** Definición de bloques/preguntas para visualizar y exportar respuestas del onboarding. */
 
 export const LEGACY_FORM_RESPONSE_FIELDS = [
-  { key: 'nombre', label: 'Nombre completo y/o canal de Discord' },
+  { key: 'nombre', label: 'Nombre completo' },
   { key: 'perfil', label: 'Perfil' },
   { key: 'nicho', label: 'Nicho o industria' },
   { key: 'oferta', label: 'Oferta' },

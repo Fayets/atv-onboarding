@@ -27,3 +27,4 @@ dist/
 *.egg-info/
 .pytest_cache/
 .mypy_cache/
+deploy-zapsign.txt
